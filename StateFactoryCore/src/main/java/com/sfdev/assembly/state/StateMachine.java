@@ -117,12 +117,14 @@ public class StateMachine {
         isRunning = true;
     }
 
+    CallbackBase exitAction;
+
     /**
      * Should be called in every loop. Executes timed transitions and performs transitions.
      */
     public void update() {
         if(!isRunning) return;
-        for (Pair<TransitionCondition, Enum> transitionInfo : currentState.getTransitions()) {
+        for (Triple<TransitionCondition, Enum, CallbackBase> transitionInfo : currentState.getTransitions()) {
             /*if(transitionInfo.first instanceof TransitionTimed && !((TransitionTimed) transitionInfo.first).timerStarted()) { // starting all timedTransitions
                 ((TransitionTimed) transitionInfo.first).startTimer();
             }*/
@@ -130,6 +132,8 @@ public class StateMachine {
             int currIndex = linearPlacements.get(currentState.getName());
 
             if (transitionInfo.first.shouldTransition()) {
+
+                exitAction = transitionInfo.third;
 
                 if(transitionInfo.second != null) { // has a pointer
                     try { // try grabbing target state from either linear or failsafes
@@ -152,15 +156,17 @@ public class StateMachine {
             hasEntered = true;
         }
 
-        if (willTransition && currentState.getExitActions() != null) { // if transitioning, perform exit actions
-            currentState.getExitActions().call();
+        if (willTransition && exitAction != null) { // if transitioning, perform exit actions
+            exitAction.call();
             currentState = nextState;
             hasEntered = false;
             willTransition = false;
-        } else if (willTransition && currentState.getExitActions() == null) {
+            exitAction = null;
+        } else if (willTransition && exitAction == null) {
             currentState = nextState;
             hasEntered = false;
             willTransition = false;
+            exitAction = null;
         }
 
         if (useUpdate) { // executing loop updates

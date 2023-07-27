@@ -13,22 +13,19 @@ import java.util.List;
 public class State {
     private Enum name; // taking in the enum constant
     private CallbackBase enterActions;
-    private CallbackBase exitActions;
-    private List<Pair<TransitionCondition, Enum>> transitions; // Pair: [TransitionCondition, Enum]
+    private List<Triple<TransitionCondition, Enum, CallbackBase>> transitions; // Pair: [TransitionCondition, Enum]
     private boolean isFailsafe;
 
-    public State(Enum name, CallbackBase enterActions,CallbackBase exitActions, List<Pair<TransitionCondition, Enum>> transitions) {
+    public State(Enum name, CallbackBase enterActions, List<Triple<TransitionCondition, Enum, CallbackBase>> transitions) {
         this.name = name;
         this.enterActions = enterActions;
-        this.exitActions = exitActions;
         this.transitions = transitions;
         isFailsafe = false;
     }
 
-    public State(Enum name, CallbackBase enterActions,CallbackBase exitActions, List<Pair<TransitionCondition, Enum>> transitions, boolean isFailsafe) {
+    public State(Enum name, CallbackBase enterActions, List<Triple<TransitionCondition, Enum, CallbackBase>> transitions, boolean isFailsafe) {
         this.name = name;
         this.enterActions = enterActions;
-        this.exitActions = exitActions;
         this.transitions = transitions;
         this.isFailsafe = false;
     }
@@ -49,15 +46,7 @@ public class State {
         enterActions = actions;
     }
 
-    public CallbackBase getExitActions() {
-        return exitActions;
-    }
-
-    public void setExitActions(CallbackBase actions) {
-        exitActions = actions;
-    }
-
-    public List<Pair<TransitionCondition, Enum>> getTransitions() {
+    public List<Triple<TransitionCondition, Enum, CallbackBase>> getTransitions() {
         return transitions;
     }
 

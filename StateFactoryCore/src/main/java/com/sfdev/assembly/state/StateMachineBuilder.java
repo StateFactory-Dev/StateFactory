@@ -20,7 +20,7 @@ public class StateMachineBuilder { // takes in the enum of states
      * @param stateName Provides an enum constant to represent the state being created.
      */
     public StateMachineBuilder state(Enum stateName) { // initializing the state
-        stateList.add(new State(stateName, null, null, new ArrayList<>(), false));
+        stateList.add(new State(stateName,null, new ArrayList<>(), false));
         return this;
     }
 
@@ -30,7 +30,7 @@ public class StateMachineBuilder { // takes in the enum of states
      * @param isFailsafe Indicates to the state machine that the current state is a fallback state. This means it will be ignored when traversing from state to state in a linear order.
      */
     public StateMachineBuilder state(Enum stateName, boolean isFailsafe) { // initializing the state
-        stateList.add(new State(stateName, null, null, new ArrayList<>(), isFailsafe));
+        stateList.add(new State(stateName, null, new ArrayList<>(), isFailsafe));
         return this;
     }
 
@@ -45,8 +45,8 @@ public class StateMachineBuilder { // takes in the enum of states
      *
      * @param nextState Indicates what the state the StateMachine should transition to after the condition is true.
      */
-    public StateMachineBuilder transition(TransitionCondition condition, Enum nextState) { // adding the new transition condition & next state
-        stateList.get(stateList.size()-1).getTransitions().add(new Pair<>(condition, nextState)); // add transition to the last state
+    public StateMachineBuilder transition(TransitionCondition condition, Enum nextState, CallbackBase exitAction) { // adding the new transition condition & next state
+        stateList.get(stateList.size()-1).getTransitions().add(new Triple<>(condition, nextState, exitAction)); // add transition to the last state
         return this;
     }
 
@@ -59,8 +59,13 @@ public class StateMachineBuilder { // takes in the enum of states
      * @param condition Indicates to the state machine under what condition it should transition to the next state in linear order.
      *                  This is in the form of a lambda function that returns true or false depending on what the user requests.
      */
+    public StateMachineBuilder transition(TransitionCondition condition, CallbackBase exitAction) {
+        stateList.get(stateList.size()-1).getTransitions().add(new Triple<>(condition, null, exitAction)); // add transition to the last state
+        return this;
+    }
+
     public StateMachineBuilder transition(TransitionCondition condition) {
-        stateList.get(stateList.size()-1).getTransitions().add(new Pair<>(condition, null)); // add transition to the last state
+        stateList.get(stateList.size()-1).getTransitions().add(new Triple<>(condition, null, null)); // add transition to the last state
         return this;
     }
 
@@ -92,21 +97,6 @@ public class StateMachineBuilder { // takes in the enum of states
      */
     public StateMachineBuilder onEnter(CallbackBase call) {
         stateList.get(stateList.size()-1).setEnterActions(call);
-        return this;
-    }
-
-    /**
-     * Example:
-     *      ".onExit( () -> {
-     *          robot.slides.armsIn();
-     *          hasTransferred = true;
-     *          robot.slides.extend();
-     *      })
-     *
-     * @param call Segment of code that should be executed on the entrance of the state.
-     */
-    public StateMachineBuilder onExit(CallbackBase call) {
-        stateList.get(stateList.size()-1).setExitActions(call);
         return this;
     }
 
