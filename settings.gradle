@@ -1,0 +1,2 @@
+rootProject.name = "StateFactory"
+include ':StateFactoryCore'
