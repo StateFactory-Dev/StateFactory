@@ -36,14 +36,16 @@ public class StateMachineBuilder { // takes in the enum of states
 
     /**
      * Example statement:
-     *      ".transition( () -> robot.intakeTouchSensor.hasTouched(), Enums.IntakeTransfer)"
+     *      ".transition( () -> robot.intakeTouchSensor.hasTouched(), State.INTAKE_TRANSFER, () -> robot.sleep() )"
      * In this transition, the user inputted a condition: whether the intake touch sensor has been touched or not, and provided a pointer state.
-     * When this condition turns true, the states exit actions will be executed and will transition to the next state.
+     * When this condition turns true, the specified exit actions after the pointer will be executed and will transition to the pointer state.
      *
      * @param condition Indicates to the state machine under what condition it should transition to the nextState.
      *                  This is in the form of a lambda function that returns true or false depending on what the user requests.
      *
      * @param nextState Indicates what the state the StateMachine should transition to after the condition is true.
+     *
+     * @param exitAction Indicates specific, overriding exit actions for this transition case.
      */
     public StateMachineBuilder transition(TransitionCondition condition, Enum nextState, CallbackBase exitAction) { // adding the new transition condition & next state
         stateList.get(stateList.size()-1).getTransitions().add(new Triple<>(condition, nextState, exitAction)); // add transition to the last state
@@ -52,18 +54,41 @@ public class StateMachineBuilder { // takes in the enum of states
 
     /**
      * Example statement:
-     *      ".transition( () -> robot.intakeTouchSensor.hasTouched())"
+     *      ".transition( () -> robot.intakeTouchSensor.hasTouched(), () -> robot.slidesIn() )"
      * In this transition, the user inputted a condition: whether the intake touch sensor has been touched or not.
-     * When this condition turns true, the states exit actions will be executed and will transition to the next state in linear order.
+     * When this condition turns true, the specified exit actions will be executed and will transition to the next state in linear order.
      *
      * @param condition Indicates to the state machine under what condition it should transition to the next state in linear order.
      *                  This is in the form of a lambda function that returns true or false depending on what the user requests.
+     *
+     * @param exitAction Indicates specific, overriding exit actions for this transition case
      */
     public StateMachineBuilder transition(TransitionCondition condition, CallbackBase exitAction) {
         stateList.get(stateList.size()-1).getTransitions().add(new Triple<>(condition, null, exitAction)); // add transition to the last state
         return this;
     }
 
+    /**
+     * Example statement:
+     *     ".transition( () -> robot.intakeTouchSensor.hasTouched(), State.TOUCHED_SENSED )"
+     * In this transition statement, when the robot's touch sensor is touched, the robot will execute exit actions and transition to the specified pointer state.
+     *
+     * @param condition Indicates to the state machine under what condition it should transition to the next state in linear order.
+     *                  This is in the form of a lambda function that returns true or false depending on what the user requests.
+     *
+     * @param nextState Indicates what state the StateMachine should transition to after the condition is true.
+     *
+     */
+    public StateMachineBuilder transition(TransitionCondition condition, Enum nextState) {
+        stateList.get(stateList.size()-1).getTransitions().add(new Triple<>(condition, nextState, null)); // add transition to the last state
+        return this;
+    }
+
+    /**
+     *
+     * @param condition Indicates to the state machine under what condition it should transition to the next state in linear order.
+     *                  This is in the form of a lambda function that returns true or false depending on what the user requests.
+     */
     public StateMachineBuilder transition(TransitionCondition condition) {
         stateList.get(stateList.size()-1).getTransitions().add(new Triple<>(condition, null, null)); // add transition to the last state
         return this;
@@ -74,16 +99,16 @@ public class StateMachineBuilder { // takes in the enum of states
      * @param time Indicates the amount of seconds it should wait before moving to the pointer state.
      * @param nextState Next state after the indicated time.
      */
-    /*public StateMachineBuilder transitionTimed(double time, Enum nextState) {
+    public StateMachineBuilder transitionTimed(double time, Enum nextState) {
         return transition(new TransitionTimed(time), nextState);
-    }*/
+    }
     /**
      * Next state is determined by linear state order.
      * @param time Indicates the amount of seconds it should wait before moving to the pointer state.
      */
-    /*public StateMachineBuilder transitionTimed(double time) {
+    public StateMachineBuilder transitionTimed(double time) {
         return transition(new TransitionTimed(time));
-    }*/
+    }
 
     /**
      * Example:
