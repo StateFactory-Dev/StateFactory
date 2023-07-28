@@ -133,7 +133,7 @@ public class StateMachine {
 
             if (transitionInfo.first.shouldTransition()) {
 
-                exitAction = transitionInfo.third;
+                exitAction = transitionInfo.third; // setting exit actions
 
                 if(transitionInfo.second != null) { // has a pointer
                     try { // try grabbing target state from either linear or failsafes
@@ -144,7 +144,6 @@ public class StateMachine {
                     }
                 } else { // linear order
                     nextState = linearList.get(currIndex+1);
-
                 }
                 willTransition = true;
                 break;
@@ -162,6 +161,7 @@ public class StateMachine {
             hasEntered = false;
             willTransition = false;
             exitAction = null;
+
         } else if (willTransition && exitAction == null) {
             if (currentState.getExitActions() != null) {
                 currentState.getExitActions().call();
