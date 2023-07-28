@@ -163,9 +163,11 @@ public class StateMachine {
             exitAction = null;
 
         } else if (willTransition && exitAction == null) {
+
             if (currentState.getExitActions() != null) {
                 currentState.getExitActions().call();
             }
+
             currentState = nextState;
             hasEntered = false;
             willTransition = false;
