@@ -13,19 +13,22 @@ import java.util.List;
 public class State {
     private Enum name; // taking in the enum constant
     private CallbackBase enterActions;
+    private CallbackBase exitActions;
     private List<Triple<TransitionCondition, Enum, CallbackBase>> transitions; // Pair: [TransitionCondition, Enum]
     private boolean isFailsafe;
 
-    public State(Enum name, CallbackBase enterActions, List<Triple<TransitionCondition, Enum, CallbackBase>> transitions) {
+    public State(Enum name, CallbackBase enterActions, CallbackBase exitActions, List<Triple<TransitionCondition, Enum, CallbackBase>> transitions) {
         this.name = name;
         this.enterActions = enterActions;
+        this.exitActions = exitActions;
         this.transitions = transitions;
         isFailsafe = false;
     }
 
-    public State(Enum name, CallbackBase enterActions, List<Triple<TransitionCondition, Enum, CallbackBase>> transitions, boolean isFailsafe) {
+    public State(Enum name, CallbackBase enterActions,CallbackBase exitActions, List<Triple<TransitionCondition, Enum, CallbackBase>> transitions, boolean isFailsafe) {
         this.name = name;
         this.enterActions = enterActions;
+        this.exitActions = exitActions;
         this.transitions = transitions;
         this.isFailsafe = false;
     }
@@ -52,5 +55,13 @@ public class State {
 
     public boolean isFailsafe() {
         return isFailsafe;
+    }
+
+    public CallbackBase getExitActions() {
+        return exitActions;
+    }
+
+    public void setExitActions(CallbackBase exitActions) {
+        this.exitActions = exitActions;
     }
 }
