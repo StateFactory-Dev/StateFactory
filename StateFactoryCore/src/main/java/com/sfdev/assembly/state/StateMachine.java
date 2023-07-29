@@ -27,7 +27,7 @@ public class StateMachine {
 
 
     /**
-     *
+     * Constructs a new state machine.
      * @param stateList Provides the list of states for the StateMachine to parse and perform logic with.
      */
     public StateMachine( List<State> stateList) {
@@ -53,7 +53,7 @@ public class StateMachine {
 
 
     /**
-     *
+     * Constructs a new machine with a list of updates to iterate over.
      * @param stateList Provides the list of states for the StateMachine to parse and perform logic with.
      * @param update A set of commands that a user may want to execute in ever loop segment. For example, a lockTo() function.
      */
@@ -81,7 +81,7 @@ public class StateMachine {
     }
 
     /**
-     *
+     * Gets the current state's name in enum type.
      * @return Enum constant of the current state
      */
     public Enum getState() {
@@ -117,7 +117,7 @@ public class StateMachine {
         isRunning = true;
     }
 
-    CallbackBase exitAction;
+    private CallbackBase exitAction;
 
     /**
      * Should be called in every loop. Executes timed transitions and performs transitions.

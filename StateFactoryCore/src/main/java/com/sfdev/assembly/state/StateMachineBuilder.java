@@ -16,7 +16,7 @@ public class StateMachineBuilder { // takes in the enum of states
     private boolean useUpdateConstructor = false;
 
     /**
-     *
+     * Creates a new state.
      * @param stateName Provides an enum constant to represent the state being created.
      */
     public StateMachineBuilder state(Enum stateName) { // initializing the state
@@ -25,6 +25,7 @@ public class StateMachineBuilder { // takes in the enum of states
     }
 
     /**
+     * Creates a new state with an option to specify if the state is a fallback state or not.
      * In a fallback state, you MUST point to another state when transitioning & the only way to enter is via a transition pointing to the (fallback) state.
      * @param stateName Provides an enum constant to represent the state being created.
      * @param isFailsafe Indicates to the state machine that the current state is a fallback state. This means it will be ignored when traversing from state to state in a linear order.
@@ -35,6 +36,7 @@ public class StateMachineBuilder { // takes in the enum of states
     }
 
     /**
+     * Assigns a new transition to a state.
      * Example statement:
      *      ".transition( () -> robot.intakeTouchSensor.hasTouched(), Enums.IntakeTransfer, ()-> robot.intake.retract() )"
      * In this transition, the user inputted a condition: whether the intake touch sensor has been touched or not, and provided a pointer state.
@@ -53,6 +55,7 @@ public class StateMachineBuilder { // takes in the enum of states
     }
 
     /**
+     * Assigns a new transition to a state.
      * Example statement:
      *      ".transition( () -> robot.intakeTouchSensor.hasTouched())"
      * In this transition, the user inputted a condition: whether the intake touch sensor has been touched or not.
@@ -67,6 +70,7 @@ public class StateMachineBuilder { // takes in the enum of states
     }
 
     /**
+     * Assigns a new transition to a state.
      * Example statement:
      *      ".transition( () -> robot.intakeTouchSensor.hasTouched(), Enums.IntakeTransfer, ()-> robot.intake.retract() )"
      * In this transition, the user inputted a condition: whether the intake touch sensor has been touched or not, and provided a pointer state.
@@ -83,6 +87,7 @@ public class StateMachineBuilder { // takes in the enum of states
     }
 
     /**
+     * Assigns a new transition to a state.
      * Example statement:
      *      ".transition( () -> robot.intakeTouchSensor.hasTouched(), Enums.IntakeTransfer, ()-> robot.intake.retract() )"
      * In this transition, the user inputted a condition: whether the intake touch sensor has been touched or not, and provided a pointer state.
@@ -117,6 +122,7 @@ public class StateMachineBuilder { // takes in the enum of states
     }*/
 
     /**
+     * Assigns an action to execute upon entering a state.
      * Example:
      *      ".onEnter( () -> {
      *          robot.slides.armsIn();
@@ -132,6 +138,7 @@ public class StateMachineBuilder { // takes in the enum of states
     }
 
     /**
+     * Assigns an action to execute upon exiting a state.
      * Example:
      *      ".onExit( () -> {
      *          robot.slides.armsIn();
@@ -147,6 +154,7 @@ public class StateMachineBuilder { // takes in the enum of states
     }
 
     /**
+     * Assigns updates to be automatically called by the statemachine.
      * This should only be used ONCE ideally at the end of the builder.
      *
      * @param call Segment of code that should be executed every loop call.
@@ -158,7 +166,7 @@ public class StateMachineBuilder { // takes in the enum of states
     }
 
     /**
-     * Call this at the end of the StateMachine methods list
+     * Call this at the end of the StateMachine methods list to construct the machine.
      *
      * Example:
      *      "...
