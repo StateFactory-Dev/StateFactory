@@ -1,7 +1,5 @@
 package assembly.transition;
 
-import com.qualcomm.robotcore.util.ElapsedTime;
-
 /**
  * Timed transition class for simple usage of time based transitions
  */

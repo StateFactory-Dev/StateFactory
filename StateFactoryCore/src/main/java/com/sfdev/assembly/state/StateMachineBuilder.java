@@ -1,8 +1,7 @@
 package com.sfdev.assembly.state;
 
 import com.sfdev.assembly.callbacks.CallbackBase;
-import com.sfdev.assembly.transition.TransitionCondition;
-
+import com.sfdev.assembly.transition.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -111,7 +110,7 @@ public class StateMachineBuilder { // takes in the enum of states
      * @param nextState Next state after the indicated time.
      */
     public StateMachineBuilder transitionTimed(double time, Enum nextState) {
-        return transition(new Transiare wetionTimed(time), nextState);
+        return transition(new TransitionTimed(time), nextState);
     }
     /**
      * Next state is determined by linear state order.
@@ -119,6 +118,26 @@ public class StateMachineBuilder { // takes in the enum of states
      */
     public StateMachineBuilder transitionTimed(double time) {
         return transition(new TransitionTimed(time));
+    }
+
+    /**
+     *
+     * @param time Indicates the amount of seconds it should wait before moving to the pointer state.
+     * @param nextState Indicates the pointer state.
+     * @param exitActions Indicates actions to execute after the indicated time passes.
+     */
+    public StateMachineBuilder transitionTimed(double time, Enum nextState, CallbackBase exitActions) {
+        return transition(new TimedTransition(time), nextState, exitActions);
+    }
+
+    /**
+     *
+     * @param time Indicates the amoutn of seconds it should wait before moving to the pointer state.
+     * @param exitActions Indicates actions to execute after the indicated time passes.
+     * @return
+     */
+    public StateMachineBuilder transitionTimed(double time, CallbackBase exitActions) {
+        return transition(new TimedTransition(time), exitActions);
     }
 
     /**
