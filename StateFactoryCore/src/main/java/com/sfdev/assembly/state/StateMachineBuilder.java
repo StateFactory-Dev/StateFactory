@@ -72,7 +72,7 @@ public class StateMachineBuilder { // takes in the enum of states
     /**
      * Assigns a new transition to a state.
      * Example statement:
-     *      ".transition( () -> robot.intakeTouchSensor.hasTouched(), Enums.IntakeTransfer, ()-> robot.intake.retract() )"
+     *      ".transition( () -> robot.intakeTouchSensor.hasTouched(),() -> robot.intake.retract() )"
      * In this transition, the user inputted a condition: whether the intake touch sensor has been touched or not, and provided a pointer state.
      * When this condition turns true, the states exit actions will be executed and will transition to the next state.
      *
@@ -89,7 +89,7 @@ public class StateMachineBuilder { // takes in the enum of states
     /**
      * Assigns a new transition to a state.
      * Example statement:
-     *      ".transition( () -> robot.intakeTouchSensor.hasTouched(), Enums.IntakeTransfer, ()-> robot.intake.retract() )"
+     *      ".transition( () -> robot.intakeTouchSensor.hasTouched(), Enums.IntakeTransfer )"
      * In this transition, the user inputted a condition: whether the intake touch sensor has been touched or not, and provided a pointer state.
      * When this condition turns true, the states exit actions will be executed and will transition to the next state.
      *
@@ -110,16 +110,16 @@ public class StateMachineBuilder { // takes in the enum of states
      * @param time Indicates the amount of seconds it should wait before moving to the pointer state.
      * @param nextState Next state after the indicated time.
      */
-    /*public StateMachineBuilder transitionTimed(double time, Enum nextState) {
-        return transition(new TransitionTimed(time), nextState);
-    }*/
+    public StateMachineBuilder transitionTimed(double time, Enum nextState) {
+        return transition(new Transiare wetionTimed(time), nextState);
+    }
     /**
      * Next state is determined by linear state order.
      * @param time Indicates the amount of seconds it should wait before moving to the pointer state.
      */
-    /*public StateMachineBuilder transitionTimed(double time) {
+    public StateMachineBuilder transitionTimed(double time) {
         return transition(new TransitionTimed(time));
-    }*/
+    }
 
     /**
      * Assigns an action to execute upon entering a state.
