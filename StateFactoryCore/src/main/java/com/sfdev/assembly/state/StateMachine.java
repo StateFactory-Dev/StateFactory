@@ -2,6 +2,7 @@ package com.sfdev.assembly.state;
 
 import com.sfdev.assembly.callbacks.CallbackBase;
 import com.sfdev.assembly.transition.TransitionCondition;
+import com.sfdev.assembly.transition.TransitionTimed;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -125,22 +126,22 @@ public class StateMachine {
     public void update() {
         if(!isRunning) return;
         for (Triple<TransitionCondition, Enum, CallbackBase> transitionInfo : currentState.getTransitions()) {
-            /*if(transitionInfo.first instanceof TransitionTimed && !((TransitionTimed) transitionInfo.first).timerStarted()) { // starting all timedTransitions
+            if(transitionInfo.first instanceof TransitionTimed && !((TransitionTimed) transitionInfo.first).timerStarted()) { // starting all timedTransitions
                 ((TransitionTimed) transitionInfo.first).startTimer();
-            }*/
+            }
 
             int currIndex = linearPlacements.get(currentState.getName());
 
-            if (transitionInfo.first.shouldTransition()) {
+            if (transitionInfo.getFirst().shouldTransition()) {
 
-                exitAction = transitionInfo.third; // setting exit actions
+                exitAction = transitionInfo.getThird(); // setting exit actions
 
-                if(transitionInfo.second != null) { // has a pointer
+                if(transitionInfo.getSecond() != null) { // has a pointer
                     try { // try grabbing target state from either linear or failsafes
-                        nextState = linearList.get(linearPlacements.get(transitionInfo.second));
+                        nextState = linearList.get(linearPlacements.get(transitionInfo.getSecond()));
 
                     } catch (NullPointerException e) {
-                        nextState = fallbackList.get(fallbackPlacements.get(transitionInfo.second));
+                        nextState = fallbackList.get(fallbackPlacements.get(transitionInfo.getSecond()));
                     }
                 } else { // linear order
                     nextState = linearList.get(currIndex+1);
@@ -162,6 +163,14 @@ public class StateMachine {
             willTransition = false;
             exitAction = null;
 
+            // RESETTING all timed transitions
+            for (Triple<TransitionCondition, Enum, CallbackBase> transitionInfo : currentState.getTransitions()) {
+                if (transitionInfo.first instanceof TransitionTimed && ((TransitionTimed) transitionInfo.first).timerStarted()) {
+                    ((TransitionTimed) transitionInfo.first).resetTimer();
+//                    System.out.println("RESETTING ALL TIMERS");
+                }
+            }
+
         } else if (willTransition && exitAction == null) {
 
             if (currentState.getExitActions() != null) {
@@ -172,6 +181,14 @@ public class StateMachine {
             hasEntered = false;
             willTransition = false;
             exitAction = null;
+
+            // RESETTING all timed transitions
+            for (Triple<TransitionCondition, Enum, CallbackBase> transitionInfo : currentState.getTransitions()) {
+                if (transitionInfo.first instanceof TransitionTimed && ((TransitionTimed) transitionInfo.first).timerStarted()) {
+                    ((TransitionTimed) transitionInfo.first).resetTimer();
+//                    System.out.println("RESETTING ALL TIMERS");
+                }
+            }
         }
 
         if (useUpdate) { // executing loop updates
