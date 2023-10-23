@@ -21,7 +21,7 @@ public class StateMachineBuilder { // takes in the enum of states
      * @param stateName Provides an enum constant to represent the state being created.
      */
     public StateMachineBuilder state(Enum stateName) { // initializing the state
-        stateList.add(new State(stateName,null, null, new ArrayList<>(), false));
+        stateList.add(new State(stateName,null, null, null, new ArrayList<>(), false));
         return this;
     }
 
@@ -32,7 +32,7 @@ public class StateMachineBuilder { // takes in the enum of states
      * @param isFailsafe Indicates to the state machine that the current state is a fallback state. This means it will be ignored when traversing from state to state in a linear order.
      */
     public StateMachineBuilder state(Enum stateName, boolean isFailsafe) { // initializing the state
-        stateList.add(new State(stateName, null, null, new ArrayList<>(), isFailsafe));
+        stateList.add(new State(stateName, null, null, null, new ArrayList<>(), isFailsafe));
         return this;
     }
 
@@ -42,7 +42,7 @@ public class StateMachineBuilder { // takes in the enum of states
      * @param stateName Provides an enum constant to represent the state being created.
      */
     public StateMachineBuilder failsafeState(Enum stateName) { // initializing the state
-        stateList.add(new State(stateName, null, null, new ArrayList<>(), true));
+        stateList.add(new State(stateName, null, null, null, new ArrayList<>(), true));
         return this;
     }
 
@@ -217,6 +217,15 @@ public class StateMachineBuilder { // takes in the enum of states
      */
     public StateMachineBuilder onExit(CallbackBase call) {
         stateList.get(stateList.size()-1).setExitActions(call);
+        return this;
+    }
+
+    /**
+     *
+     * @param call Segment of code that will be executed every loop.
+     */
+    public StateMachineBuilder loop(CallbackBase call) {
+        stateList.get(stateList.size()-1).setLoopActions(call);
         return this;
     }
 

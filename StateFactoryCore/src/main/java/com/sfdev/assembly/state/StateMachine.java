@@ -151,6 +151,11 @@ public class StateMachine {
             }
         }
 
+        // calling loop actions
+        if(currentState.getLoopActions() != null) {
+            currentState.getLoopActions().call();
+        }
+
         if (!hasEntered && currentState.getEnterActions() != null) { // perform enter action
             currentState.getEnterActions().call();
             hasEntered = true;
