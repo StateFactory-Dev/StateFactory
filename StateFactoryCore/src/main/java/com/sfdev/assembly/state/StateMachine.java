@@ -118,6 +118,14 @@ public class StateMachine {
         isRunning = true;
     }
 
+    /**
+     * Starting the state machine at the indicated state
+     * @param state Prematurely setting the statemachine to the indicated state
+     */
+    public void setState(Enum state) {
+        currentState = linearList.get(linearList.indexOf(state));
+    }
+
     private CallbackBase exitAction;
 
     /**
@@ -139,12 +147,19 @@ public class StateMachine {
                 if(transitionInfo.getSecond() != null) { // has a pointer
                     try { // try grabbing target state from either linear or failsafes
                         nextState = linearList.get(linearPlacements.get(transitionInfo.getSecond()));
-
                     } catch (NullPointerException e) {
-                        nextState = fallbackList.get(fallbackPlacements.get(transitionInfo.getSecond()));
+                        try {
+                            nextState = fallbackList.get(fallbackPlacements.get(transitionInfo.getSecond()));
+                        } catch (NullPointerException m) {
+                            throw new IllegalStateException("Invalid state indicated");
+                        }
                     }
                 } else { // linear order
-                    nextState = linearList.get(currIndex+1);
+                    if(linearList.size() < currIndex+1) {
+                        throw new IllegalStateException("Transition Indicated, But No Next State Found. Remove final case transition statement.");
+                    } else {
+                        nextState = linearList.get(currIndex+1);
+                    }
                 }
                 willTransition = true;
                 break;
