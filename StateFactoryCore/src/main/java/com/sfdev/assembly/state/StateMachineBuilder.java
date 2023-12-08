@@ -4,6 +4,7 @@ import com.sfdev.assembly.callbacks.CallbackBase;
 //import com.sfdev.assembly.transition.*;
 import com.sfdev.assembly.transition.TransitionTimed;
 import com.sfdev.assembly.transition.TransitionCondition;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -14,7 +15,7 @@ import java.util.List;
 public class StateMachineBuilder { // takes in the enum of states
     private List<State> stateList = new ArrayList<>();
     private CallbackBase update;
-    private enum WAIT {
+    protected enum WAIT {
         TEMP;
     }
 
@@ -55,7 +56,7 @@ public class StateMachineBuilder { // takes in the enum of states
      * @param seconds The amount of seconds to wait before moving to the next state.
      *
      */
-    public StateMachineBuilder waitSeconds(double seconds) {
+    public StateMachineBuilder waitState(double seconds) {
         State temp = new State(WAIT.TEMP, null, null, null, Arrays.asList(new Triple<>(new TransitionTimed(seconds), null, null)), false);
         stateList.add(temp);
         return this;
@@ -66,7 +67,7 @@ public class StateMachineBuilder { // takes in the enum of states
      * @param seconds The amount of seconds to wait before moving to the indicated state.
      *
      */
-    public StateMachineBuilder waitSeconds(double seconds, Enum pointer) {
+    public StateMachineBuilder waitState(double seconds, Enum pointer) {
         stateList.add(new State(WAIT.TEMP, null, null, null, Arrays.asList(new Triple<>(new TransitionTimed(seconds), pointer, null)), false));
         return this;
     }
@@ -76,7 +77,7 @@ public class StateMachineBuilder { // takes in the enum of states
      * @param seconds The amount of seconds to wait before moving to the indicated state.
      *
      */
-    public StateMachineBuilder waitSecondsPointer(double seconds, Enum pointer) {
+    public StateMachineBuilder waitStatePointer(double seconds, Enum pointer) {
         stateList.add(new State(WAIT.TEMP, null, null, null, Arrays.asList(new Triple<>(new TransitionTimed(seconds), pointer, null)), false));
         return this;
     }

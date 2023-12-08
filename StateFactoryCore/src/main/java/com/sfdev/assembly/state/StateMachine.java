@@ -4,9 +4,19 @@ import com.sfdev.assembly.callbacks.CallbackBase;
 import com.sfdev.assembly.transition.TransitionCondition;
 import com.sfdev.assembly.transition.TransitionTimed;
 
+
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+
+abstract class StateMachineBuilderException extends RuntimeException {
+    public StateMachineBuilderException(String s, Throwable stackTrace) {
+        super(s, stackTrace);
+    }
+}
+class StateMachineTransitionException extends StateMachineBuilderException { public StateMachineTransitionException(String s, Throwable stackTrace) { super(s, stackTrace); } }
+class InvalidStateException extends StateMachineBuilderException { public InvalidStateException(String s, Throwable stackTrace) { super(s, stackTrace); } }
 
 /**
  * Manages all states and transitions between them.
@@ -119,10 +129,27 @@ public class StateMachine {
     }
 
     /**
+     *
+     * @return Returns whether the state machine is running or not.
+     */
+    public boolean isRunning() {
+        return isRunning;
+    }
+
+    /**
      * Starting the state machine at the indicated state
      * @param state Prematurely setting the statemachine to the indicated state
      */
     public void setState(Enum state) {
+        try { // try grabbing target state from either linear or failsafes
+            currentState = linearList.get(linearList.indexOf(state));
+        } catch (NullPointerException e) {
+            try {
+                currentState = fallbackList.get(fallbackList.indexOf(state));
+            } catch (NullPointerException m) {
+                throw new InvalidStateException("Invalid state indicated. Ensure that the given enum is connected to a state.", m);
+            }
+        }
         currentState = linearList.get(linearList.indexOf(state));
     }
 
@@ -133,6 +160,10 @@ public class StateMachine {
      */
     public void update() {
         if(!isRunning) return;
+        if(currentState.getTransitions().isEmpty() && currentState.getName() != StateMachineBuilder.WAIT.TEMP) {
+            stop();
+        }
+
         for (Triple<TransitionCondition, Enum, CallbackBase> transitionInfo : currentState.getTransitions()) {
             if(transitionInfo.first instanceof TransitionTimed && !((TransitionTimed) transitionInfo.first).timerStarted()) { // starting all timedTransitions
                 ((TransitionTimed) transitionInfo.first).startTimer();
@@ -146,19 +177,19 @@ public class StateMachine {
 
                 if(transitionInfo.getSecond() != null) { // has a pointer
                     try { // try grabbing target state from either linear or failsafes
-                        nextState = linearList.get(linearPlacements.get(transitionInfo.getSecond()));
+                        nextState = linearList.get(linearPlacements.get(transitionInfo.getSecond())); // linearPlacements throws null if it does not exist which throws NPE
                     } catch (NullPointerException e) {
                         try {
                             nextState = fallbackList.get(fallbackPlacements.get(transitionInfo.getSecond()));
                         } catch (NullPointerException m) {
-                            throw new IllegalStateException("Invalid state indicated");
+                            throw new InvalidStateException("Invalid state indicated. Ensure that the pointer enum is connected to a state.", m);
                         }
                     }
                 } else { // linear order
-                    if(linearList.size() < currIndex+1) {
-                        throw new IllegalStateException("Transition Indicated, But No Next State Found. Remove final case transition statement.");
-                    } else {
-                        nextState = linearList.get(currIndex+1);
+                    try {
+                        nextState = linearList.get(currIndex + 1);
+                    } catch (IndexOutOfBoundsException e) {
+                        throw new StateMachineTransitionException("Transition Indicated, But No Next State Found. Remove final case transition statement.", e);
                     }
                 }
                 willTransition = true;
