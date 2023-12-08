@@ -10,6 +10,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+/**
+ * State Factory exceptions
+ */
 abstract class StateMachineBuilderException extends RuntimeException {
     public StateMachineBuilderException(String s, Throwable stackTrace) {
         super(s, stackTrace);
@@ -160,7 +163,7 @@ public class StateMachine {
      */
     public void update() {
         if(!isRunning) return;
-        if(currentState.getTransitions().isEmpty() && currentState.getName() != StateMachineBuilder.WAIT.TEMP) {
+        if(currentState.getTransitions().isEmpty() && currentState.getName() != StateMachineBuilder.WAIT.TEMP && currentState.getLoopActions() == null) {
             stop();
         }
 

@@ -15,6 +15,10 @@ import java.util.List;
 public class StateMachineBuilder { // takes in the enum of states
     private List<State> stateList = new ArrayList<>();
     private CallbackBase update;
+
+    /**
+     * Special WAIT enum for wait states
+     */
     protected enum WAIT {
         TEMP;
     }
