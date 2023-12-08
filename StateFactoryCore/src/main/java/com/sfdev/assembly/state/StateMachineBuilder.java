@@ -52,7 +52,7 @@ public class StateMachineBuilder { // takes in the enum of states
     }
 
     /**
-     * Progresses to the next state after a certain amount of time. (non-blocking)
+     * Progresses to the next state after a certain amount of time in seconds. (non-blocking)
      * @param seconds The amount of seconds to wait before moving to the next state.
      *
      */
@@ -63,7 +63,7 @@ public class StateMachineBuilder { // takes in the enum of states
     }
 
     /**
-     * Progresses to the next state after a certain amount of time. (non-blocking)
+     * Progresses to the next state after a certain amount of time in seconds. (non-blocking)
      * @param seconds The amount of seconds to wait before moving to the indicated state.
      *
      */
@@ -73,7 +73,7 @@ public class StateMachineBuilder { // takes in the enum of states
     }
 
     /**
-     * Progresses to the next state after a certain amount of time. (non-blocking)
+     * Progresses to the next state after a certain amount of time in seconds. (non-blocking)
      * @param seconds The amount of seconds to wait before moving to the indicated state.
      *
      */
@@ -216,7 +216,7 @@ public class StateMachineBuilder { // takes in the enum of states
 
     /**
      *
-     * @param time Indicates the amoutn of seconds it should wait before moving to the pointer state.
+     * @param time Indicates the amount of seconds it should wait before moving to the pointer state.
      * @param exitActions Indicates actions to execute after the indicated time passes.
      * @return
      */
