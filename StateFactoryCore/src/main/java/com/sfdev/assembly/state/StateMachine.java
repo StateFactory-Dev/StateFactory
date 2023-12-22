@@ -7,6 +7,8 @@ import com.sfdev.assembly.transition.TransitionTimed;
 
 
 
+
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -135,6 +137,13 @@ public class StateMachine {
     public void reset() {
         currentState = linearList.get(0);
         nextState = null;
+        /*for (State state : linearList) {
+            for (Triple<TransitionCondition, Enum, CallbackBase> cond : state.getTransitions()) {
+                if(cond.first instanceof TransitionTimed) {
+                    ((TransitionTimed) cond.first).resetTimer();
+                }
+            }
+        }*/
         isRunning = true;
     }
 
@@ -170,15 +179,20 @@ public class StateMachine {
      */
     public void update() {
         if(!isRunning) return;
-        if(currentState.getTransitions().isEmpty() && currentState.getNameEnum() != StateMachineBuilder.WAIT.TEMP && currentState.getLoopActions() != null) {
+        if(currentState.getTransitions().isEmpty() && currentState.getNameEnum() != StateMachineBuilder.WAIT.TEMP && currentState.getLoopActions() == null) {
             stop();
         }
+
+        if (!hasEntered && currentState.getEnterActions() != null) { // perform enter action
+            currentState.getEnterActions().call();
+            hasEntered = true;
+        }
+
 
         for (Triple<TransitionCondition, String, CallbackBase> transitionInfo : currentState.getTransitions()) {
             if(transitionInfo.first instanceof TransitionTimed && !((TransitionTimed) transitionInfo.first).timerStarted()) { // starting all timedTransitions
                 ((TransitionTimed) transitionInfo.first).startTimer();
             }
-
 
             if (transitionInfo.getFirst().shouldTransition()) {
 
@@ -210,11 +224,6 @@ public class StateMachine {
         // calling loop actions
         if(currentState.getLoopActions() != null) {
             currentState.getLoopActions().call();
-        }
-
-        if (!hasEntered && currentState.getEnterActions() != null) { // perform enter action
-            currentState.getEnterActions().call();
-            hasEntered = true;
         }
 
         if (willTransition && currentState.getExitActions() != null) { // if transitioning, perform exit actions
