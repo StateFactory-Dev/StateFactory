@@ -6,13 +6,11 @@ import com.sfdev.assembly.transition.TransitionTimed;
 
 
 
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-/**
- * State Factory exceptions
- */
 abstract class StateMachineBuilderException extends RuntimeException {
     public StateMachineBuilderException(String s, Throwable stackTrace) {
         super(s, stackTrace);
@@ -20,6 +18,7 @@ abstract class StateMachineBuilderException extends RuntimeException {
 }
 class StateMachineTransitionException extends StateMachineBuilderException { public StateMachineTransitionException(String s, Throwable stackTrace) { super(s, stackTrace); } }
 class InvalidStateException extends StateMachineBuilderException { public InvalidStateException(String s, Throwable stackTrace) { super(s, stackTrace); } }
+class StateNotEnumException extends StateMachineBuilderException { public StateNotEnumException(String s, Throwable stackTrace) { super(s, stackTrace); } }
 
 /**
  * Manages all states and transitions between them.
@@ -29,8 +28,8 @@ public class StateMachine {
     public List<State> linearList = new ArrayList<>();
     private List<State> fallbackList = new ArrayList<>();
     private CallbackBase update;
-    private HashMap<Enum, Integer> linearPlacements = new HashMap<>();
-    private HashMap<Enum, Integer> fallbackPlacements = new HashMap<>();
+    private HashMap<String, Integer> linearPlacements = new HashMap<>();
+    private HashMap<String, Integer> fallbackPlacements = new HashMap<>();
 
     State currentState;
     State nextState;
@@ -55,11 +54,11 @@ public class StateMachine {
         }
 
         for(State s : linearList) {
-            linearPlacements.put(s.getName(), linearList.indexOf(s));
+            linearPlacements.put(s.getNameString(), linearList.indexOf(s));
         }
 
         for(State s : fallbackList) {
-            fallbackPlacements.put(s.getName(), fallbackList.indexOf(s));
+            fallbackPlacements.put(s.getNameString(), fallbackList.indexOf(s));
         }
 
         currentState = linearList.get(0);
@@ -72,25 +71,7 @@ public class StateMachine {
      * @param update A set of commands that a user may want to execute in ever loop segment. For example, a lockTo() function.
      */
     public StateMachine(List<State> stateList, CallbackBase update) {
-        this.update = update;
-
-        // splitting list stateList between linearList and fallbackList
-        for(State s : stateList) {
-            if(s.isFailsafe())
-                fallbackList.add(s);
-            else
-                linearList.add(s);
-        }
-
-        for(State s : linearList) {
-            linearPlacements.put(s.getName(), linearList.indexOf(s));
-        }
-
-        for(State s : fallbackList) {
-            fallbackPlacements.put(s.getName(), fallbackList.indexOf(s));
-        }
-
-        currentState = linearList.get(0);
+        this(stateList);
         useUpdate = true;
     }
 
@@ -98,8 +79,34 @@ public class StateMachine {
      * Gets the current state's name in enum type.
      * @return Enum constant of the current state
      */
+    public Enum getStateEnum() {
+        return currentState.getNameEnum();
+    }
+
+    /**
+     * Gets the current state's name in a string.
+     * @return String of the current state
+     */
+    public String getStateString() {
+        return currentState.getNameString();
+    }
+
+    /**
+     * Gets the current state's name in enum type. Throws an error if the state is a string state.
+     * @return Enum constant of the current state
+     */
     public Enum getState() {
-        return currentState.getName();
+        if(currentState.getNameEnum() == null) {
+
+            // Forcing state not enum exception to obtain stack trace
+            try {
+                throw new NullPointerException();
+            } catch(NullPointerException e) {
+                throw new StateNotEnumException("All States Must Be An Enum For getState()", e);
+            }
+        }
+
+        return currentState.getNameEnum();
     }
 
     /**
@@ -163,16 +170,15 @@ public class StateMachine {
      */
     public void update() {
         if(!isRunning) return;
-        if(currentState.getTransitions().isEmpty() && currentState.getName() != StateMachineBuilder.WAIT.TEMP && currentState.getLoopActions() == null) {
+        if(currentState.getTransitions().isEmpty() && currentState.getNameEnum() != StateMachineBuilder.WAIT.TEMP && currentState.getLoopActions() != null) {
             stop();
         }
 
-        for (Triple<TransitionCondition, Enum, CallbackBase> transitionInfo : currentState.getTransitions()) {
+        for (Triple<TransitionCondition, String, CallbackBase> transitionInfo : currentState.getTransitions()) {
             if(transitionInfo.first instanceof TransitionTimed && !((TransitionTimed) transitionInfo.first).timerStarted()) { // starting all timedTransitions
                 ((TransitionTimed) transitionInfo.first).startTimer();
             }
 
-            int currIndex = linearPlacements.get(currentState.getName());
 
             if (transitionInfo.getFirst().shouldTransition()) {
 
@@ -190,6 +196,7 @@ public class StateMachine {
                     }
                 } else { // linear order
                     try {
+                        int currIndex = linearPlacements.get(currentState.getNameString());
                         nextState = linearList.get(currIndex + 1);
                     } catch (IndexOutOfBoundsException e) {
                         throw new StateMachineTransitionException("Transition Indicated, But No Next State Found. Remove final case transition statement.", e);
@@ -210,39 +217,23 @@ public class StateMachine {
             hasEntered = true;
         }
 
-        if (willTransition && exitAction != null) { // if transitioning, perform exit actions
-            exitAction.call();
-            currentState = nextState;
-            hasEntered = false;
-            willTransition = false;
-            exitAction = null;
+        if (willTransition && currentState.getExitActions() != null) { // if transitioning, perform exit actions
+            currentState.getExitActions().call();
+        }
+
+        if(willTransition) {
 
             // RESETTING all timed transitions
-            for (Triple<TransitionCondition, Enum, CallbackBase> transitionInfo : currentState.getTransitions()) {
+            for (Triple<TransitionCondition, String, CallbackBase> transitionInfo : currentState.getTransitions()) {
                 if (transitionInfo.first instanceof TransitionTimed && ((TransitionTimed) transitionInfo.first).timerStarted()) {
                     ((TransitionTimed) transitionInfo.first).resetTimer();
-//                    System.out.println("RESETTING ALL TIMERS");
                 }
-            }
-
-        } else if (willTransition && exitAction == null) {
-
-            if (currentState.getExitActions() != null) {
-                currentState.getExitActions().call();
             }
 
             currentState = nextState;
             hasEntered = false;
             willTransition = false;
             exitAction = null;
-
-            // RESETTING all timed transitions
-            for (Triple<TransitionCondition, Enum, CallbackBase> transitionInfo : currentState.getTransitions()) {
-                if (transitionInfo.first instanceof TransitionTimed && ((TransitionTimed) transitionInfo.first).timerStarted()) {
-                    ((TransitionTimed) transitionInfo.first).resetTimer();
-//                    System.out.println("RESETTING ALL TIMERS");
-                }
-            }
         }
 
         if (useUpdate) { // executing loop updates
