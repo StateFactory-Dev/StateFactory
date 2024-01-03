@@ -4,11 +4,6 @@ import com.sfdev.assembly.callbacks.CallbackBase;
 import com.sfdev.assembly.transition.TransitionCondition;
 import com.sfdev.assembly.transition.TransitionTimed;
 
-
-
-
-
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
