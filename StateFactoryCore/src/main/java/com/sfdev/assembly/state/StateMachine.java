@@ -174,6 +174,7 @@ public class StateMachine {
      */
     public void update() {
         if(!isRunning) return;
+        // Turning the state machine off at the correct state
         if(currentState.getTransitions().isEmpty() && currentState.getNameEnum() != StateMachineBuilder.WAIT.TEMP && currentState.getLoopActions() == null) {
             stop();
         }
