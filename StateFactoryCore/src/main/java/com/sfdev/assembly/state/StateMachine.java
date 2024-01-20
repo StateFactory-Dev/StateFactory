@@ -23,12 +23,11 @@ class StateNotEnumException extends StateMachineBuilderException { public StateN
  */
 public class StateMachine {
     // linear list and fallback list logic
-    public List<State> linearList = new ArrayList<>();
-    private List<State> fallbackList = new ArrayList<>();
-    private CallbackBase update;
-    private HashMap<String, Integer> linearPlacements = new HashMap<>();
+    private List<State> linearList;
+    private List<State> fallbackList;
+    private List<List<State>> selectStates;
+    private HashMap<String, Integer> linearPlacements;
     private HashMap<String, Integer> fallbackPlacements = new HashMap<>();
-
     State currentState;
     State nextState;
     private boolean willTransition = false;
@@ -42,6 +41,12 @@ public class StateMachine {
      * @param stateList Provides the list of states for the StateMachine to parse and perform logic with.
      */
     public StateMachine( List<State> stateList) {
+        linearList = new ArrayList<>();
+        fallbackList = new ArrayList<>();
+        selectStates = new ArrayList<>();
+
+        linearPlacements = new HashMap<>();
+        fallbackPlacements = new HashMap<>();
 
         // splitting list stateList between linearList and fallbackList
         for(State s : stateList) {
@@ -60,17 +65,6 @@ public class StateMachine {
         }
 
         currentState = linearList.get(0);
-    }
-
-
-    /**
-     * Constructs a new machine with a list of updates to iterate over.
-     * @param stateList Provides the list of states for the StateMachine to parse and perform logic with.
-     * @param update A set of commands that a user may want to execute in ever loop segment. For example, a lockTo() function.
-     */
-    public StateMachine(List<State> stateList, CallbackBase update) {
-        this(stateList);
-        useUpdate = true;
     }
 
     /**
@@ -235,10 +229,6 @@ public class StateMachine {
             hasEntered = false;
             willTransition = false;
             exitAction = null;
-        }
-
-        if (useUpdate) { // executing loop updates
-            update.call();
         }
     }
 }
