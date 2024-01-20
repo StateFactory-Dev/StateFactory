@@ -1,5 +1,6 @@
 package com.sfdev.assembly.state;
 
+import android.telecom.Call;
 import com.sfdev.assembly.callbacks.CallbackBase;
 import com.sfdev.assembly.transition.TransitionCondition;
 import com.sfdev.assembly.transition.TransitionTimed;
@@ -112,8 +113,10 @@ public class StateMachine {
     public void start() {
         isRunning = true;
 
-        if(currentState.getEnterActions() != null) {
-            currentState.getEnterActions().call();
+        List<CallbackBase> enterActions = currentState.getEnterActions();
+
+        if(enterActions != null && !enterActions.isEmpty()) {
+            for(CallbackBase action : enterActions) action.call();
         }
 
         hasEntered = true;
@@ -132,13 +135,6 @@ public class StateMachine {
     public void reset() {
         currentState = linearList.get(0);
         nextState = null;
-        /*for (State state : linearList) {
-            for (Triple<TransitionCondition, Enum, CallbackBase> cond : state.getTransitions()) {
-                if(cond.first instanceof TransitionTimed) {
-                    ((TransitionTimed) cond.first).resetTimer();
-                }
-            }
-        }*/
         isRunning = true;
     }
 
@@ -179,8 +175,8 @@ public class StateMachine {
             stop();
         }
 
-        if (!hasEntered && currentState.getEnterActions() != null) { // perform enter action
-            currentState.getEnterActions().call();
+        if (!hasEntered && currentState.getEnterActions() != null && !currentState.getEnterActions().isEmpty()) { // perform enter action
+            for(CallbackBase action : currentState.getEnterActions()) action.call();
             hasEntered = true;
         }
 
@@ -190,16 +186,16 @@ public class StateMachine {
                 ((TransitionTimed) transitionInfo.first).startTimer();
             }
 
-            if (transitionInfo.getFirst().shouldTransition()) {
+            if (transitionInfo.getTransitionCondition().shouldTransition()) {
 
-                exitAction = transitionInfo.getThird(); // setting exit actions
+                exitAction = transitionInfo.getExitAction(); // setting exit actions
 
-                if(transitionInfo.getSecond() != null) { // has a pointer
+                if(transitionInfo.getPointerState() != null) { // has a pointer
                     try { // try grabbing target state from either linear or failsafes
-                        nextState = linearList.get(linearPlacements.get(transitionInfo.getSecond())); // linearPlacements throws null if it does not exist which throws NPE
+                        nextState = linearList.get(linearPlacements.get(transitionInfo.getPointerState())); // linearPlacements throws null if it does not exist which throws NPE
                     } catch (NullPointerException e) {
                         try {
-                            nextState = fallbackList.get(fallbackPlacements.get(transitionInfo.getSecond()));
+                            nextState = fallbackList.get(fallbackPlacements.get(transitionInfo.getPointerState()));
                         } catch (NullPointerException m) {
                             throw new InvalidStateException("Invalid state indicated. Ensure that the pointer enum is connected to a state.", m);
                         }
@@ -219,11 +215,11 @@ public class StateMachine {
 
         // calling loop actions
         if(currentState.getLoopActions() != null) {
-            currentState.getLoopActions().call();
+            for(CallbackBase action : currentState.getLoopActions()) action.call();
         }
 
         if (willTransition && currentState.getExitActions() != null) { // if transitioning, perform exit actions
-            currentState.getExitActions().call();
+            for(CallbackBase action : currentState.getExitActions()) action.call();
         }
 
         if(willTransition) {

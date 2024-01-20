@@ -1,13 +1,11 @@
 package com.sfdev.assembly.state;
 
 import com.sfdev.assembly.callbacks.CallbackBase;
-//import com.sfdev.assembly.transition.*;
 import com.sfdev.assembly.transition.TransitionTimed;
 import com.sfdev.assembly.transition.TransitionCondition;
 
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -88,8 +86,8 @@ public class StateMachineBuilder { // takes in the enum of states
      *
      */
     public StateMachineBuilder waitState(double seconds) {
-        State temp = new State(WAIT.TEMP, null, null, null, Arrays.asList(new Triple<>(new TransitionTimed(seconds), null, null)), false);
-        stateList.add(temp);
+        waitState(seconds, (String) null);
+
         return this;
     }
 
@@ -98,9 +96,9 @@ public class StateMachineBuilder { // takes in the enum of states
      * @param seconds The amount of seconds to wait before moving to the indicated state.
      *
      */
-    public StateMachineBuilder waitState(double seconds, Enum pointer) {
-        stateList.add(new State(WAIT.TEMP, null, null, null, Arrays.asList(new Triple<>(new TransitionTimed(seconds), pointer.name(), null)), false));
-        return this;
+    public void waitState(double seconds, Enum pointer) {
+        stateList.add(new State(WAIT.TEMP, null, null, null, new ArrayList<>(), false));
+        transitionTimed(seconds, pointer);
     }
 
     /**
@@ -108,9 +106,9 @@ public class StateMachineBuilder { // takes in the enum of states
      * @param seconds The amount of seconds to wait before moving to the indicated state.
      *
      */
-    public StateMachineBuilder waitState(double seconds, String pointer) {
-        stateList.add(new State(WAIT.TEMP, null, null, null, Arrays.asList(new Triple<>(new TransitionTimed(seconds), pointer, null)), false));
-        return this;
+    public void waitState(double seconds, String pointer) {
+        stateList.add(new State(WAIT.TEMP, null, null, null, new ArrayList<>(), false));
+        transitionTimed(seconds, pointer);
     }
 
     /**
@@ -119,7 +117,8 @@ public class StateMachineBuilder { // takes in the enum of states
      *
      */
     public StateMachineBuilder waitStatePointer(double seconds, Enum pointer) {
-        stateList.add(new State(WAIT.TEMP, null, null, null, Arrays.asList(new Triple<>(new TransitionTimed(seconds), pointer.name(), null)), false));
+        waitState(seconds, pointer);
+
         return this;
     }
 
@@ -129,7 +128,8 @@ public class StateMachineBuilder { // takes in the enum of states
      *
      */
     public StateMachineBuilder waitStatePointer(double seconds, String pointer) {
-        stateList.add(new State(WAIT.TEMP, null, null, null, Arrays.asList(new Triple<>(new TransitionTimed(seconds), pointer, null)), false));
+        waitState(seconds, pointer);
+
         return this;
     }
 
@@ -216,7 +216,8 @@ public class StateMachineBuilder { // takes in the enum of states
      * @param exitAction Tells the StateMachine to override the previously set exitAction if the condition is true.
      */
     public StateMachineBuilder transitionWithExitAction(TransitionCondition condition, CallbackBase exitAction) {
-        stateList.get(stateList.size()-1).getTransitions().add(new Triple<>(condition, null, exitAction)); // add transition to the last state
+        transition(condition, exitAction);
+
         return this;
     }
 
@@ -271,7 +272,8 @@ public class StateMachineBuilder { // takes in the enum of states
      *
      */
     public StateMachineBuilder transitionWithPointerState(TransitionCondition condition, Enum nextState) {
-        stateList.get(stateList.size()-1).getTransitions().add(new Triple<>(condition, nextState.name(), null)); // add transition to the last state
+        transition(condition, nextState);
+
         return this;
     }
 
@@ -289,7 +291,8 @@ public class StateMachineBuilder { // takes in the enum of states
      *
      */
     public StateMachineBuilder transitionWithPointerState(TransitionCondition condition, String nextState) {
-        stateList.get(stateList.size()-1).getTransitions().add(new Triple<>(condition, nextState, null)); // add transition to the last state
+        transition(condition, nextState);
+
         return this;
     }
 
@@ -298,8 +301,8 @@ public class StateMachineBuilder { // takes in the enum of states
      * @param time Indicates the amount of seconds it should wait before moving to the pointer state.
      * @param nextState Next state after the indicated time.
      */
-    public StateMachineBuilder transitionTimed(double time, Enum nextState) {
-        return transition(new TransitionTimed(time), nextState);
+    public void transitionTimed(double time, Enum nextState) {
+        transition(new TransitionTimed(time), nextState);
     }
 
     /**
@@ -307,8 +310,8 @@ public class StateMachineBuilder { // takes in the enum of states
      * @param time Indicates the amount of seconds it should wait before moving to the pointer state.
      * @param nextState Next state after the indicated time.
      */
-    public StateMachineBuilder transitionTimed(double time, String nextState) {
-        return transition(new TransitionTimed(time), nextState);
+    public void transitionTimed(double time, String nextState) {
+        transition(new TransitionTimed(time), nextState);
     }
     /**
      * Next state is determined by linear state order.
@@ -361,7 +364,7 @@ public class StateMachineBuilder { // takes in the enum of states
      * @param call Segment of code that should be executed on the entrance of the state.
      */
     public StateMachineBuilder onEnter(CallbackBase call) {
-        stateList.get(stateList.size()-1).setEnterActions(call);
+        stateList.get(stateList.size()-1).addEnterActions(call);
         return this;
     }
 
@@ -377,7 +380,7 @@ public class StateMachineBuilder { // takes in the enum of states
      * @param call Segment of code that should be executed on the exit of the state, unless overridden by a transition.
      */
     public StateMachineBuilder onExit(CallbackBase call) {
-        stateList.get(stateList.size()-1).setExitActions(call);
+        stateList.get(stateList.size()-1).addExitAction(call);
         return this;
     }
 
@@ -386,7 +389,7 @@ public class StateMachineBuilder { // takes in the enum of states
      * @param call Segment of code that will be executed every loop.
      */
     public StateMachineBuilder loop(CallbackBase call) {
-        stateList.get(stateList.size()-1).setLoopActions(call);
+        stateList.get(stateList.size()-1).addLoopActions(call);
         return this;
     }
 
@@ -404,7 +407,6 @@ public class StateMachineBuilder { // takes in the enum of states
 
     /**
      * Call this at the end of the StateMachine methods list to construct the machine.
-     *
      * Example:
      *      "...
      *      .build();"

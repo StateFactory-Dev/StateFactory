@@ -2,9 +2,9 @@ package com.sfdev.assembly.state;
 
 /**
  * A class that holds 3 objects.
- * @param <F> The type of the first object in the triple.
- * @param <S> The type of the second object in the triple.
- * @param <T> The type of the third object in the triple.
+ * @param <F> The transition condition.
+ * @param <S> The pointer state.
+ * @param <T> The exit action on transition.
  */
 public class Triple<F, S, T>{
 
@@ -14,37 +14,37 @@ public class Triple<F, S, T>{
 
     /**
      * A class that holds 3 objects.
-     * @param first The first object that needs to be stored in the triple.
-     * @param second The second object that needs to be stored in the triple.
-     * @param third The third object that needs to be stored in the triple.
+     * @param transitionCondition The transition condition.
+     * @param pointerState The pointer state.
+     * @param exitAction The exit action on transition.
      */
-    public Triple(F first, S second, T third) {
-        this.first = first;
-        this.second = second;
-        this.third = third;
+    public Triple(F transitionCondition, S pointerState, T exitAction) {
+        this.first = transitionCondition;
+        this.second = pointerState;
+        this.third = exitAction;
     }
 
     /**
-     * Getter for the first object.
+     * Getter for the transition condition.
      * @return Returns the first object that was passed into the constructor.
      */
-    public F getFirst() {
+    public F getTransitionCondition() {
         return first;
     }
 
     /**
-     * Getter for the second object.
+     * Getter for the pointer state.
      * @return Returns the second object that was passed into the constructor.
      */
-    public S getSecond() {
+    public S getPointerState() {
         return second;
     }
 
     /**
-     * Getter for the third object.
+     * Getter for the exit action.
      * @return Returns the third object that was passed into the constructor.
      */
-    public T getThird() {
+    public T getExitAction() {
         return third;
     }
 }
