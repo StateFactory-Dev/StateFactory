@@ -1,6 +1,7 @@
 package com.sfdev.assembly.state;
 
 import com.sfdev.assembly.callbacks.CallbackBase;
+import com.sfdev.assembly.transition.TransitionData;
 import com.sfdev.assembly.transition.TransitionTimed;
 import com.sfdev.assembly.transition.TransitionCondition;
 
@@ -16,13 +17,23 @@ public class StateMachineBuilder {
     private List<State> stateList = new ArrayList<>();
     private List<String> stateSelect = new ArrayList<>();
     private boolean inStateSelection = false;
-    private CallbackBase update;
-
     protected enum WAIT {
         TEMP;
     }
 
-    private boolean useUpdateConstructor = false;
+    /**
+     * Creates a new state with an option to specify if the state is a fallback state or not.
+     * In a fallback state, you MUST point to another state when transitioning & the only way to enter is via a transition pointing to the (fallback) state.
+     *
+     * @param stateName  Provides a string to represent the state being created.
+     * @param isFailsafe Indicates to the state machine that the current state is a fallback state. This means it will be ignored when traversing from state to state in a linear order.
+     */
+    public StateMachineBuilder state(String stateName, boolean isFailsafe) { // initializing the state
+        clearStateSelection();
+        stateList.add(new State(stateName, isFailsafe));
+
+        return this;
+    }
 
     /**
      * Creates a new state.
@@ -30,8 +41,7 @@ public class StateMachineBuilder {
      * @param stateName Provides an enum constant to represent the state being created.
      */
     public StateMachineBuilder state(Enum stateName) { // initializing the state
-        clearStateSelection();
-        stateList.add(new State(stateName, null, null, null, new ArrayList<>(), false));
+        state(stateName.name(), false);
 
         return this;
     }
@@ -42,8 +52,7 @@ public class StateMachineBuilder {
      * @param stateName Provides a string to represent the state being created.
      */
     public StateMachineBuilder state(String stateName) { // initializing the state
-        clearStateSelection();
-        stateList.add(new State(stateName, null, null, null, new ArrayList<>(), false));
+        state(stateName, false);
 
         return this;
     }
@@ -56,22 +65,7 @@ public class StateMachineBuilder {
      * @param isFailsafe Indicates to the state machine that the current state is a fallback state. This means it will be ignored when traversing from state to state in a linear order.
      */
     public StateMachineBuilder state(Enum stateName, boolean isFailsafe) { // initializing the state
-        clearStateSelection();
-        stateList.add(new State(stateName, null, null, null, new ArrayList<>(), isFailsafe));
-
-        return this;
-    }
-
-    /**
-     * Creates a new state with an option to specify if the state is a fallback state or not.
-     * In a fallback state, you MUST point to another state when transitioning & the only way to enter is via a transition pointing to the (fallback) state.
-     *
-     * @param stateName  Provides a string to represent the state being created.
-     * @param isFailsafe Indicates to the state machine that the current state is a fallback state. This means it will be ignored when traversing from state to state in a linear order.
-     */
-    public StateMachineBuilder state(String stateName, boolean isFailsafe) { // initializing the state
-        clearStateSelection();
-        stateList.add(new State(stateName, null, null, null, new ArrayList<>(), isFailsafe));
+        state(stateName.name(), isFailsafe);
 
         return this;
     }
@@ -83,8 +77,7 @@ public class StateMachineBuilder {
      * @param stateName Provides an enum constant to represent the state being created.
      */
     public StateMachineBuilder failsafeState(Enum stateName) { // initializing the state
-        clearStateSelection();
-        stateList.add(new State(stateName, null, null, null, new ArrayList<>(), true));
+        state(stateName, true);
 
         return this;
     }
@@ -96,8 +89,21 @@ public class StateMachineBuilder {
      * @param stateName Provides string to represent the state being created.
      */
     public StateMachineBuilder failsafeState(String stateName) { // initializing the state
+        state(stateName);
+
+        return this;
+    }
+
+
+    /**
+     * Progresses to the next state after a certain amount of time. (non-blocking)
+     *
+     * @param seconds The amount of seconds to wait before moving to the indicated state.
+     */
+    public StateMachineBuilder waitState(double seconds, String pointer) {
         clearStateSelection();
-        stateList.add(new State(stateName, null, null, null, new ArrayList<>(), true));
+        stateList.add(new State(WAIT.TEMP));
+        transitionTimed(seconds, pointer);
 
         return this;
     }
@@ -108,7 +114,6 @@ public class StateMachineBuilder {
      * @param seconds The amount of seconds to wait before moving to the next state.
      */
     public StateMachineBuilder waitState(double seconds) {
-        clearStateSelection();
         waitState(seconds, (String) null);
 
         return this;
@@ -120,25 +125,12 @@ public class StateMachineBuilder {
      * @param seconds The amount of seconds to wait before moving to the indicated state.
      */
     public StateMachineBuilder waitState(double seconds, Enum pointer) {
-        clearStateSelection();
-        stateList.add(new State(WAIT.TEMP, null, null, null, new ArrayList<>(), false));
-        transitionTimed(seconds, pointer);
+        waitState(seconds, pointer.name());
 
         return this;
     }
 
-    /**
-     * Progresses to the next state after a certain amount of time. (non-blocking)
-     *
-     * @param seconds The amount of seconds to wait before moving to the indicated state.
-     */
-    public StateMachineBuilder waitState(double seconds, String pointer) {
-        clearStateSelection();
-        stateList.add(new State(WAIT.TEMP, null, null, null, new ArrayList<>(), false));
-        transitionTimed(seconds, pointer);
 
-        return this;
-    }
 
     /**
      * Progresses to the next state after a certain amount of time. (non-blocking)
@@ -147,7 +139,6 @@ public class StateMachineBuilder {
      */
     public StateMachineBuilder waitStatePointer(double seconds, Enum pointer) {
         waitState(seconds, pointer);
-        inStateSelection = false;
 
         return this;
     }
@@ -159,7 +150,6 @@ public class StateMachineBuilder {
      */
     public StateMachineBuilder waitStatePointer(double seconds, String pointer) {
         waitState(seconds, pointer);
-        inStateSelection = false;
 
         return this;
     }
@@ -177,14 +167,7 @@ public class StateMachineBuilder {
      * @param exitAction Tells the StateMachine to override the previously set exitAction if the condition is true.
      */
     public StateMachineBuilder transition(TransitionCondition condition, Enum nextState, CallbackBase exitAction) { // adding the new transition condition & next state
-        if (inStateSelection) {
-            for (State currState : stateList) {
-                if (stateSelect.contains(currState.getNameString())) {
-                    currState.getTransitions().add(new Triple<>(condition, nextState.name(), exitAction)); // add transition to the last state
-                }
-            }
-        } else
-            stateList.get(stateList.size() - 1).getTransitions().add(new Triple<>(condition, nextState.name(), exitAction)); // add transition to the last state
+        transition(condition, nextState.name(), exitAction);
 
         return this;
     }
@@ -202,14 +185,50 @@ public class StateMachineBuilder {
      * @param exitAction Tells the StateMachine to override the previously set exitAction if the condition is true.
      */
     public StateMachineBuilder transition(TransitionCondition condition, String nextState, CallbackBase exitAction) { // adding the new transition condition & next state
-        if (inStateSelection) {
+        if(inStateSelection) {
             for (State currState : stateList) {
                 if (stateSelect.contains(currState.getNameString())) {
-                    currState.getTransitions().add(new Triple<>(condition, nextState, exitAction)); // add transition to the last state
+                    currState.getTransitions().add(new TransitionData(condition, nextState, exitAction)); // add transition to the last state
                 }
             }
-        } else
-            stateList.get(stateList.size() - 1).getTransitions().add(new Triple<>(condition, nextState, exitAction)); // add transition to the last state
+        }
+        else
+            stateList.get(stateList.size() - 1).getTransitions().add(new TransitionData(condition, nextState, exitAction)); // add transition to the last state
+
+        return this;
+    }
+
+    /**
+     * Adds a minimum time to the state to make sure the state does not proceed without this amount of time passing.
+     * This method applies to ALL transitions.e
+     * @param time The amount of time that must pass before the state transitions.
+     */
+    public StateMachineBuilder minimumTransitionTimed(double time) {
+        State list = stateList.get(stateList.size() - 1);
+        list.setMinTransition(new TransitionTimed(time));
+
+        return this;
+    }
+
+    /**
+     * Adds a minimum time to the state to make sure the state does not proceed without this amount of time passing.
+     * Only applies to the specified transitions (1-indexed).
+     * @param time The amount of time that must pass before the state transitions.
+     */
+    public StateMachineBuilder minimumTransitionTimed(double time, int... transitionNumber) {
+        State list = stateList.get(stateList.size() - 1);
+        for (int i = 0; i < list.getTransitions().size(); i++) {
+            for (int k : transitionNumber) {
+                if(k > list.getTransitions().size()) {
+                    throw new IllegalMinimumTransition("Minimum transition on a non-existent state");
+                }
+                if (i+1 == k) {
+                    list.getTransitions().get(i).setMinimumTransition(new TransitionTimed(time));
+                    break;
+                }
+            }
+        }
+
 
         return this;
     }
@@ -402,13 +421,14 @@ public class StateMachineBuilder {
      * @param call Segment of code that should be executed on the entrance of the state.
      */
     public StateMachineBuilder onEnter(CallbackBase call) {
-        if (inStateSelection) {
+        if(inStateSelection) {
             for (State currState : stateList) {
                 if (stateSelect.contains(currState.getNameString())) {
                     currState.addEnterActions(call);
                 }
             }
-        } else
+        }
+        else
             stateList.get(stateList.size() - 1).addEnterActions(call);
         return this;
     }
@@ -425,13 +445,14 @@ public class StateMachineBuilder {
      * @param call Segment of code that should be executed on the exit of the state, unless overridden by a transition.
      */
     public StateMachineBuilder onExit(CallbackBase call) {
-        if (inStateSelection) {
+        if(inStateSelection) {
             for (State currState : stateList) {
                 if (stateSelect.contains(currState.getNameString())) {
                     currState.addExitAction(call);
                 }
             }
-        } else
+        }
+        else
             stateList.get(stateList.size() - 1).addExitAction(call);
         return this;
     }
@@ -440,20 +461,20 @@ public class StateMachineBuilder {
      * @param call Segment of code that will be executed every loop.
      */
     public StateMachineBuilder loop(CallbackBase call) {
-        if (inStateSelection) {
+        if(inStateSelection) {
             for (State currState : stateList) {
                 if (stateSelect.contains(currState.getNameString())) {
                     currState.addLoopActions(call);
                 }
             }
-        } else
+        }
+        else
             stateList.get(stateList.size() - 1).addLoopActions(call);
         return this;
     }
 
     /**
      * Allows you to add enter, exit, and loop calls to the selected String states. Also allows you to add transitions.
-     *
      * @param states The states, defined by strings, to have the following actions added to.
      */
     public StateMachineBuilder states(String... states) {
@@ -465,7 +486,6 @@ public class StateMachineBuilder {
 
     /**
      * Allows you to add enter, exit, and loop calls to the selected Enum states. Also allows you to add transitions.
-     *
      * @param states The states, defined by enums, to have the following actions added to.
      */
     public StateMachineBuilder states(Enum... states) {
@@ -496,7 +516,7 @@ public class StateMachineBuilder {
      * Clears the stateSelect array
      */
     private void clearStateSelection() {
-        if (stateSelect != null && !stateSelect.isEmpty()) stateSelect = null;
+        if(stateSelect != null && !stateSelect.isEmpty()) stateSelect = null;
         inStateSelection = false;
     }
 }

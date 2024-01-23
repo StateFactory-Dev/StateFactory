@@ -3,6 +3,7 @@ package com.sfdev.assembly.state;
 
 import com.sfdev.assembly.callbacks.CallbackBase;
 import com.sfdev.assembly.transition.TransitionCondition;
+import com.sfdev.assembly.transition.TransitionData;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,70 +18,37 @@ public class State {
     private List<CallbackBase> enterActions;
     private List<CallbackBase> exitActions;
     private List<CallbackBase> loopActions;
-    private List<Triple<TransitionCondition, String, CallbackBase>> transitions;
+    private List<TransitionData> transitions;
     private boolean isFailsafe;
+    private TransitionCondition overallMinTransition;
 
-    /**
-     * Construct the state in the most basic form.
-     * @param name The enum that is to be the name of the state.
-     * @param enterActions The callback that will be executed on entering the state.
-     * @param loopActions Actions that will constantly be executed during the state.
-     * @param exitActions The callback that will be executed on exiting the state.
-     * @param transitions The array holding all the transitions from this state. Made up of triples that hold the condition, pointer (if one is specified), and override exit action (if one is specified).
-     */
-    protected State(Enum name, List<CallbackBase> enterActions, List<CallbackBase> loopActions, List<CallbackBase> exitActions, List<Triple<TransitionCondition, String, CallbackBase>> transitions) {
-        this.name = name.name();
+    protected State(Enum name, boolean isFailsafe) {
+        this(name.name(), isFailsafe);
         this.nameEnum = name;
-        this.enterActions = enterActions;
-        this.exitActions = exitActions;
-        this.transitions = transitions;
-        this.loopActions = loopActions;
-        this.isFailsafe = false;
     }
 
     /**
-     * Construct the state with a specified boolean to tell if the state will be handled as a fallback.
-     * @param name The enum that is to be the name of the state.
-     * @param enterActions The callback that will be executed on entering the state.
-     * @param loopActions Actions that will constantly be executed during the state.
-     * @param exitActions The callback that will be executed on exiting the state.
-     * @param transitions The array holding all the transitions that are to be assigned to this state. Made up of triples that hold the condition, pointer (if one is specified), and override exit action (if one is specified).
-     * @param isFailsafe Specifies if this state should be handled as a fallback state or a normal state.
+     * Creates the state object
+     * @param name The name that is assigned to the state that is being created.
+     * @param isFailsafe Determines whether the state should be determined as failsafe or not
      */
-    protected State(Enum name, List<CallbackBase> enterActions, List<CallbackBase> loopActions, List<CallbackBase> exitActions, List<Triple<TransitionCondition, String, CallbackBase>> transitions, boolean isFailsafe) {
-        this(name, enterActions, loopActions, exitActions, transitions);
-        this.isFailsafe = isFailsafe;
-    }
-
-    /**
-     * Construct the state in the most basic form.
-     * @param name The enum that is to be the name of the state.
-     * @param enterActions The callback that will be executed on entering the state.
-     * @param loopActions Actions that will constantly be executed during the state.
-     * @param exitActions The callback that will be executed on exiting the state.
-     * @param transitions The array holding all the transitions from this state. Made up of triples that hold the condition, pointer (if one is specified), and override exit action (if one is specified).
-     */
-    protected State(String name, List<CallbackBase> enterActions, List<CallbackBase> loopActions, List<CallbackBase> exitActions, List<Triple<TransitionCondition, String, CallbackBase>> transitions) {
+    protected State(String name, boolean isFailsafe) {
         this.name = name;
-        this.enterActions = enterActions;
-        this.exitActions = exitActions;
-        this.transitions = transitions;
-        this.loopActions = loopActions;
-        this.isFailsafe = false;
+        enterActions = null;
+        exitActions = null;
+        loopActions = null;
+        overallMinTransition = null;
+        transitions = new ArrayList<>();
+        this.isFailsafe = isFailsafe;
     }
 
-    /**
-     * Construct the state with a specified boolean to tell if the state will be handled as a fallback.
-     * @param name The string that is to be the name of the state.
-     * @param enterActions The callback that will be executed on entering the state.
-     * @param loopActions Actions that will constantly be executed during the state.
-     * @param exitActions The callback that will be executed on exiting the state.
-     * @param transitions The array holding all the transitions that are to be assigned to this state. Made up of triples that hold the condition, pointer (if one is specified), and override exit action (if one is specified).
-     * @param isFailsafe Specifies if this state should be handled as a fallback state or a normal state.
-     */
-    protected State(String name, List<CallbackBase> enterActions, List<CallbackBase> loopActions, List<CallbackBase> exitActions, List<Triple<TransitionCondition, String, CallbackBase>> transitions, boolean isFailsafe) {
-        this(name, enterActions, loopActions, exitActions, transitions);
-        this.isFailsafe = isFailsafe;
+    protected State(Enum nameEnum) {
+        this(nameEnum, false);
+        this.nameEnum = nameEnum;
+    }
+
+    protected State(String name) {
+        this(name, false);
     }
 
     /**
@@ -128,10 +96,17 @@ public class State {
      * Gets the transition array.
      * @return Returns the array holding all the transitions that are to be assigned to this state. Made up of triples that hold the condition, pointer (if one is specified), and override exit action (if one is specified).
      */
-    protected List<Triple<TransitionCondition, String, CallbackBase>> getTransitions() {
+    protected List<TransitionData> getTransitions() {
         return transitions;
     }
 
+    /**
+     * Sets the transition data.
+     * @param data Takes in the TransitionData object to assign to the state.
+     */
+    protected void setTransitions(List<TransitionData> data) {
+        transitions = data;
+    }
     /**
      * Gets the loop actions.
      * @return Returns the callback containing the states loop actions.
@@ -189,4 +164,21 @@ public class State {
         if(exitActions == null) exitActions = new ArrayList<>();
         exitActions.add(actions);
     }
+
+    /**
+     * Sets the minimum transition.
+     * @param time The time that the transition should last for.
+     */
+    protected void setMinTransition(TransitionCondition time) {
+        overallMinTransition = time;
+    }
+
+    /**
+     * Gets the minimum transition.
+     * @return Returns the transition condition that represents the minimum transition.
+     */
+    public TransitionCondition getMinTransition() {
+        return overallMinTransition;
+    }
 }
+

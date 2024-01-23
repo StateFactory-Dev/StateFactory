@@ -21,6 +21,9 @@ public class TransitionTimed implements TransitionCondition {
     public void resetTimer() {
         startTime = 0;
     }
+    public double getTime() {
+        return (System.nanoTime() - startTime) / 1e9;
+    }
 
     @Override
     public boolean shouldTransition() {
