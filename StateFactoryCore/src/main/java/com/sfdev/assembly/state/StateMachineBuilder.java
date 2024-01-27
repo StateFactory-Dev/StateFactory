@@ -41,7 +41,7 @@ public class StateMachineBuilder {
      * @param stateName Provides an enum constant to represent the state being created.
      */
     public StateMachineBuilder state(Enum stateName) { // initializing the state
-        state(stateName.name(), false);
+        state(stateName, false);
 
         return this;
     }
@@ -65,7 +65,9 @@ public class StateMachineBuilder {
      * @param isFailsafe Indicates to the state machine that the current state is a fallback state. This means it will be ignored when traversing from state to state in a linear order.
      */
     public StateMachineBuilder state(Enum stateName, boolean isFailsafe) { // initializing the state
-        state(stateName.name(), isFailsafe);
+        clearStateSelection();
+        stateList.add(new State(stateName, isFailsafe));
+
 
         return this;
     }
