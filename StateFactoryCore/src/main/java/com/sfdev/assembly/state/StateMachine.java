@@ -1,10 +1,8 @@
 package com.sfdev.assembly.state;
 
-import android.telecom.Call;
 import com.sfdev.assembly.callbacks.CallbackBase;
-import com.sfdev.assembly.transition.TransitionCondition;
-import com.sfdev.assembly.transition.TransitionData;
-import com.sfdev.assembly.transition.TransitionTimed;
+import com.sfdev.assembly.callbacks.TimedCallback;
+import com.sfdev.assembly.transition.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,22 +17,22 @@ class StateMachineTransitionException extends StateMachineBuilderException { pub
 class InvalidStateException extends StateMachineBuilderException { public InvalidStateException(String s) { super(s); } }
 class StateNotEnumException extends StateMachineBuilderException { public StateNotEnumException(String s) { super(s); } }
 class IllegalMinimumTransition extends StateMachineBuilderException { public IllegalMinimumTransition(String s) { super(s); } }
+class StateTemplateBuilderException extends StateMachineBuilderException { public StateTemplateBuilderException(String s) { super(s); } }
 /**
  * Manages all states and transitions between them.
  */
 public class StateMachine {
     // linear list and fallback list logic
-    private List<State> linearList;
-    private List<State> fallbackList;
-    private List<List<State>> selectStates;
-    private HashMap<String, Integer> linearPlacements;
-    private HashMap<String, Integer> fallbackPlacements = new HashMap<>();
+    private final List<State> linearList;
+    private final List<State> fallbackList;
+    private final HashMap<String, Integer> linearPlacements;
+    private final HashMap<String, Integer> fallbackPlacements;
     State currentState;
     State nextState;
     private boolean willTransition = false;
     private boolean hasEntered = false;
     private boolean isRunning = false;
-    private boolean useUpdate = false;
+    private boolean timedCallbacksDone = false;
 
 
     /**
@@ -44,7 +42,6 @@ public class StateMachine {
     public StateMachine( List<State> stateList) {
         linearList = new ArrayList<>();
         fallbackList = new ArrayList<>();
-        selectStates = new ArrayList<>();
 
         linearPlacements = new HashMap<>();
         fallbackPlacements = new HashMap<>();
@@ -101,14 +98,6 @@ public class StateMachine {
      */
     public void start() {
         isRunning = true;
-
-        List<CallbackBase> enterActions = currentState.getEnterActions();
-
-        if(enterActions != null && !enterActions.isEmpty()) {
-            for(CallbackBase action : enterActions) action.call();
-        }
-
-        hasEntered = true;
     }
 
     /**
@@ -146,7 +135,7 @@ public class StateMachine {
             try {
                 currentState = fallbackList.get(fallbackPlacements.get(state.name()));
             } catch (NullPointerException m) {
-                throw new InvalidStateException("Invalid state indicated. Ensure that the given enum is connected to a state.");
+                throw new InvalidStateException("State \"" + currentState.getNameString() + "\": Invalid state indicated. Ensure that the given enum is connected to a state.");
             }
         }
     }
@@ -162,30 +151,44 @@ public class StateMachine {
             try {
                 currentState = fallbackList.get(fallbackPlacements.get(state));
             } catch (NullPointerException m) {
-                throw new InvalidStateException("Invalid state indicated. Ensure that the given enum is connected to a state.");
+                throw new InvalidStateException("State \"" + currentState.getNameString() + "\": Invalid state indicated. Ensure that the given enum is connected to a state.");
             }
         }
     }
 
 
     /**
-     * Should be called in every loop. Executes timed transitions and performs transitions.
+     * Should be called in every loop. Executes transitions and actions.
      */
     public void update() {
 
         if(!isRunning) return;
         // Turning the state machine off at the correct state
-        if(currentState.getTransitions().isEmpty() && currentState.getNameEnum() != StateMachineBuilder.WAIT.TEMP && currentState.getLoopActions() == null) {
+        if( (currentState.getTimedAction().isEmpty() || timedCallbacksDone) && currentState.getTransitions().isEmpty() && currentState.getLoopActions() == null) {
             stop();
+            isRunning = false;
         }
 
-        if (!hasEntered && currentState.getEnterActions() != null && !currentState.getEnterActions().isEmpty()) { // perform enter action
-            for(CallbackBase action : currentState.getEnterActions()) action.call();
+
+        if (!hasEntered) {
+            if(currentState.getEnterActions() != null && !currentState.getEnterActions().isEmpty()) { // perform enter action
+                for (CallbackBase action : currentState.getEnterActions()) action.call();
+            }
             hasEntered = true;
         }
 
         if (currentState.getMinTransition() != null && currentState.getMinTransition() instanceof TransitionTimed && !((TransitionTimed) currentState.getMinTransition()).timerStarted()) {
             ((TransitionTimed) currentState.getMinTransition()).startTimer();
+        }
+
+        for (TimedCallback timedCallback : currentState.getTimedAction()) {
+            if (!timedCallback.timerStarted()) {
+                timedCallback.startTimer();
+            }
+
+            timedCallback.call();
+
+            timedCallbacksDone = timedCallback.isDone();
         }
 
         for (TransitionData transitionInfo : currentState.getTransitions()) {
@@ -201,7 +204,7 @@ public class StateMachine {
                         try {
                             nextState = fallbackList.get(fallbackPlacements.get(transitionInfo.getPointerState()));
                         } catch (NullPointerException m) {
-                            throw new InvalidStateException("Invalid state indicated. Ensure that the pointer enum is connected to a state.");
+                            throw new InvalidStateException("State \"" + currentState.getNameString() + "\": Invalid state indicated. Ensure that the pointer enum is connected to a state.");
                         }
                     }
                 } else { // linear order
@@ -209,7 +212,7 @@ public class StateMachine {
                         int currIndex = linearPlacements.get(currentState.getNameString());
                         nextState = linearList.get(currIndex + 1);
                     } catch (IndexOutOfBoundsException e) {
-                        throw new StateMachineTransitionException("Transition Indicated, But No Next State Found. Remove final case transition statement.");
+                        throw new StateMachineTransitionException("State \"" + currentState.getNameString() + "\": Transition Indicated, But No Next State Found. Remove final case transition statement.");
                     }
                 }
 
@@ -223,7 +226,7 @@ public class StateMachine {
         }
 
         // calling loop actions
-        if(currentState.getLoopActions() != null) {
+        if(!willTransition && currentState.getLoopActions() != null) {
             for(CallbackBase action : currentState.getLoopActions()) action.call();
         }
 
@@ -238,6 +241,10 @@ public class StateMachine {
                 transitionInfo.resetTimer();
             }
 
+            for(TimedCallback timedCallback : currentState.getTimedAction()) {
+                timedCallback.resetTimer();
+            }
+
             if(currentState.getMinTransition() != null && currentState.getMinTransition() instanceof TransitionTimed) {
                 ((TransitionTimed) currentState.getMinTransition()).resetTimer();
             }
@@ -245,6 +252,7 @@ public class StateMachine {
 
             hasEntered = false;
             willTransition = false;
+            timedCallbacksDone = false;
         }
     }
 }

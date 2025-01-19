@@ -1,9 +1,8 @@
 package com.sfdev.assembly.state;
 
-
-import com.sfdev.assembly.callbacks.CallbackBase;
-import com.sfdev.assembly.transition.TransitionCondition;
-import com.sfdev.assembly.transition.TransitionData;
+import com.sfdev.assembly.callbacks.*;
+import com.sfdev.assembly.state.*;
+import com.sfdev.assembly.transition.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +17,7 @@ public class State {
     private List<CallbackBase> enterActions;
     private List<CallbackBase> exitActions;
     private List<CallbackBase> loopActions;
+    private List<TimedCallback> timedActions;
     private List<TransitionData> transitions;
     private boolean isFailsafe;
     private TransitionCondition overallMinTransition;
@@ -38,13 +38,13 @@ public class State {
         exitActions = null;
         loopActions = null;
         overallMinTransition = null;
+        timedActions = new ArrayList<>();
         transitions = new ArrayList<>();
         this.isFailsafe = isFailsafe;
     }
 
     protected State(Enum nameEnum) {
         this(nameEnum, false);
-        this.nameEnum = nameEnum;
     }
 
     protected State(String name) {
@@ -125,12 +125,30 @@ public class State {
 
     /**
      * Add a loop action to the array
-     * @param actions The CallbackBase that is to be the states new loop action.
+     * @param actions The CallbackBase that will loop continuously in the state.
      */
     protected void addLoopActions(CallbackBase actions) {
         if(loopActions == null) loopActions = new ArrayList<>();
         loopActions.add(actions);
     }
+
+    /**
+     * Gets the timed actions
+     * @return Returns the list of all timed callbacks
+     */
+    protected List<TimedCallback> getTimedAction() {
+        return timedActions;
+    }
+
+    /**
+     * Add a loop action to the array
+     * @param action The CallbackBase that executes after the specified time.
+     */
+    protected void addTimedAction(TimedCallback action) {
+        if(timedActions == null) timedActions = new ArrayList<>();
+        timedActions.add(action);
+    }
+
 
     /**
      * Get the boolean that specifies if the state is a fallback or not.
@@ -177,8 +195,25 @@ public class State {
      * Gets the minimum transition.
      * @return Returns the transition condition that represents the minimum transition.
      */
-    public TransitionCondition getMinTransition() {
+    protected TransitionCondition getMinTransition() {
         return overallMinTransition;
+    }
+
+    /**
+     * Sets the enum & string name of the state.
+     * @param name The enum name.
+     */
+    protected void setName(Enum name) {
+        this.nameEnum = name;
+        setName(name.name());
+    }
+
+    /**
+     * Sets the string name of the state.
+     * @param name The string name.
+     */
+    protected void setName(String name) {
+        this.name = name;
     }
 }
 

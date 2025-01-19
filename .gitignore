@@ -9,3 +9,4 @@ local.properties
 .gradle/buildOutputCleanup/buildOutputCleanup.lock
 .gradle/checksums/checksums.lock
 .idea/uiDesigner.xml
+.idea/misc.xml

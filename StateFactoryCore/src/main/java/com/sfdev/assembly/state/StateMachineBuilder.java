@@ -1,10 +1,8 @@
 package com.sfdev.assembly.state;
 
 import com.sfdev.assembly.callbacks.CallbackBase;
-import com.sfdev.assembly.transition.TransitionData;
-import com.sfdev.assembly.transition.TransitionTimed;
-import com.sfdev.assembly.transition.TransitionCondition;
-
+import com.sfdev.assembly.callbacks.TimedCallback;
+import com.sfdev.assembly.transition.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,11 +12,29 @@ import java.util.List;
  * Builds each state for the StateMachine.
  */
 public class StateMachineBuilder {
-    private List<State> stateList = new ArrayList<>();
+    private final List<State> stateList = new ArrayList<>();
     private List<String> stateSelect = new ArrayList<>();
     private boolean inStateSelection = false;
-    protected enum WAIT {
-        TEMP;
+    private final WaitState.WAIT[] waitList = WaitState.WAIT.values();
+    private int waitCounter = 0;
+
+    private enum StateBuilder {
+        STATE_BUILDER_ENUM
+    }
+
+    public StateMachineBuilder() {
+        createState(new State(StateBuilder.STATE_BUILDER_ENUM));
+    }
+
+    /**
+     * Creates a state through a given state object
+     */
+    public void createState(State state) {
+        if(!stateList.isEmpty() && stateList.get(0).getNameString().equals(StateBuilder.STATE_BUILDER_ENUM.name())) {
+            stateList.set(0, state);
+        } else {
+            stateList.add(state);
+        }
     }
 
     /**
@@ -30,10 +46,48 @@ public class StateMachineBuilder {
      */
     public StateMachineBuilder state(String stateName, boolean isFailsafe) { // initializing the state
         clearStateSelection();
-        stateList.add(new State(stateName, isFailsafe));
+        createState(new State(stateName, isFailsafe));
+        return this;
+    }
+
+    /**
+     * Creates a new state with an option to specify if the state is a fallback state or not.
+     * In a fallback state, you MUST point to another state when transitioning & the only way to enter is via a transition pointing to the (fallback) state.
+     *
+     * @param stateName  Provides an enum to represent the state being created.
+     * @param isFailsafe Indicates to the state machine that the current state is a fallback state. This means it will be ignored when traversing from state to state in a linear order.
+     */
+    public StateMachineBuilder state(Enum stateName, boolean isFailsafe) { // initializing the state
+        clearStateSelection();
+        createState(new State(stateName, isFailsafe));
 
         return this;
     }
+
+    /**
+     * Creates a state with values from a given state template.
+     * @param name Provides an enum to represent the state being created.
+     * @param state Provides the values and properties of the state.
+     */
+    public StateMachineBuilder stateTemplate(Enum name, State state) {
+        state.setName(name);
+        createState(state);
+
+        return this;
+    }
+
+    /**
+     * Creates a state with values from a given state template.
+     * @param name Provides a string to represent the state being created.
+     * @param state Provides the values and properties of the state.
+     */
+    public StateMachineBuilder stateTemplate(String name, State state) {
+        state.setName(name);
+        createState(state);
+
+        return this;
+    }
+
 
     /**
      * Creates a new state.
@@ -53,21 +107,6 @@ public class StateMachineBuilder {
      */
     public StateMachineBuilder state(String stateName) { // initializing the state
         state(stateName, false);
-
-        return this;
-    }
-
-    /**
-     * Creates a new state with an option to specify if the state is a fallback state or not.
-     * In a fallback state, you MUST point to another state when transitioning & the only way to enter is via a transition pointing to the (fallback) state.
-     *
-     * @param stateName  Provides a string to represent the state being created.
-     * @param isFailsafe Indicates to the state machine that the current state is a fallback state. This means it will be ignored when traversing from state to state in a linear order.
-     */
-    public StateMachineBuilder state(Enum stateName, boolean isFailsafe) { // initializing the state
-        clearStateSelection();
-        stateList.add(new State(stateName, isFailsafe));
-
 
         return this;
     }
@@ -103,8 +142,8 @@ public class StateMachineBuilder {
      * @param seconds The amount of seconds to wait before moving to the indicated state.
      */
     public StateMachineBuilder waitState(double seconds, String pointer) {
-        clearStateSelection();
-        stateList.add(new State(WAIT.TEMP));
+        state(waitList[waitCounter]);
+        waitCounter++;
         transitionTimed(seconds, pointer);
 
         return this;
@@ -131,8 +170,6 @@ public class StateMachineBuilder {
 
         return this;
     }
-
-
 
     /**
      * Progresses to the next state after a certain amount of time. (non-blocking)
@@ -222,7 +259,7 @@ public class StateMachineBuilder {
         for (int i = 0; i < list.getTransitions().size(); i++) {
             for (int k : transitionNumber) {
                 if(k > list.getTransitions().size()) {
-                    throw new IllegalMinimumTransition("Minimum transition on a non-existent state");
+                    throw new IllegalMinimumTransition("State " + list.getNameString() + ": Minimum transition on a non-existent state");
                 }
                 if (i+1 == k) {
                     list.getTransitions().get(i).setMinimumTransition(new TransitionTimed(time));
@@ -459,6 +496,20 @@ public class StateMachineBuilder {
         return this;
     }
 
+    public StateMachineBuilder afterTime(double time, CallbackBase callbackBase) {
+        if(inStateSelection) {
+            for (State currState : stateList) {
+                if (stateSelect.contains(currState.getNameString())) {
+                    currState.addTimedAction(new TimedCallback(time, callbackBase));
+                }
+            }
+        }
+        else
+            stateList.get(stateList.size() - 1).addTimedAction(new TimedCallback(time, callbackBase));
+
+        return this;
+    }
+
     /**
      * @param call Segment of code that will be executed every loop.
      */
@@ -511,7 +562,26 @@ public class StateMachineBuilder {
      * @return StateMachine object with the stateList and the updates list.
      */
     public StateMachine build() {
+        // Order timedCallbacks
+        for (State state : stateList) {
+            if (!state.getTimedAction().isEmpty()) state.getTimedAction().sort((a,b) -> a.getTime() >= b.getTime() ? 1 : -1);
+        }
+
         return new StateMachine(stateList);
+    }
+
+    /**
+     * Call this at the end of the StateMachine methods list to construct a state template.
+     * Example:
+     * "...
+     * .buildStateTemplate();"
+     *
+     * @return State object with the appropriate properties.
+     */
+    public State buildStateTemplate() {
+        if (stateList.get(0).getNameString().equals(StateBuilder.STATE_BUILDER_ENUM.name())) {
+            return stateList.get(0);
+        } else throw new StateTemplateBuilderException("Attempted to build a state template with normal state machine builder. Do not indicate state name with '.state()' or change '.buildStateTemplate()' to '.build()'");
     }
 
     /**
