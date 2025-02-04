@@ -70,8 +70,7 @@ public class StateMachineBuilder {
      * @param state Provides the values and properties of the state.
      */
     public StateMachineBuilder stateTemplate(Enum name, State state) {
-        state.setName(name);
-        createState(state);
+        createState(new State(name, state));
 
         return this;
     }
@@ -82,8 +81,7 @@ public class StateMachineBuilder {
      * @param state Provides the values and properties of the state.
      */
     public StateMachineBuilder stateTemplate(String name, State state) {
-        state.setName(name);
-        createState(state);
+        createState(new State(name, state));
 
         return this;
     }
@@ -135,6 +133,81 @@ public class StateMachineBuilder {
         return this;
     }
 
+    /**
+     * Creating all different combinations of the wait states with potential pointers.
+     * @param name The name of the wait state.
+     * @param seconds Seconds to wait.
+     */
+    public StateMachineBuilder waitState(String name, double seconds) {
+        state(name);
+        transitionTimed(seconds);
+
+        return this;
+    }
+
+    /**
+     * Creating all different combinations of the wait states with potential pointers.
+     * @param stateName The name of the wait state.
+     * @param seconds Seconds to wait.
+     */
+    public StateMachineBuilder waitState(Enum stateName, double seconds) {
+        state(stateName);
+        transitionTimed(seconds);
+
+        return this;
+    }
+
+    /**
+     * Creating all different combinations of the wait states with potential pointers.
+     * @param stateName The name of the wait state.
+     * @param seconds Seconds to wait.
+     * @param pointer The pointer state after the wait state.
+     */
+    public StateMachineBuilder waitState(Enum stateName, double seconds, Enum pointer) {
+        state(stateName);
+        transitionTimed(seconds, pointer);
+
+        return this;
+    }
+
+    /**
+     * Creating all different combinations of the wait states with potential pointers.
+     * @param stateName The name of the wait state.
+     * @param seconds Seconds to wait.
+     * @param pointer The pointer state after the wait state.
+     */
+    public StateMachineBuilder waitState(String stateName, double seconds, String pointer) {
+        state(stateName);
+        transitionTimed(seconds, pointer);
+
+        return this;
+    }
+
+    /**
+     * Creating all different combinations of the wait states with potential pointers.
+     * @param stateName The name of the wait state.
+     * @param seconds Seconds to wait.
+     * @param pointer The pointer state after the wait state.
+     */
+    public StateMachineBuilder waitState(String stateName, double seconds, Enum pointer) {
+        state(stateName);
+        transitionTimed(seconds, pointer);
+
+        return this;
+    }
+
+    /**
+     * Creating all different combinations of the wait states with potential pointers.
+     * @param stateName The name of the wait state.
+     * @param seconds Seconds to wait.
+     * @param pointer The pointer state after the wait state.
+     */
+    public StateMachineBuilder waitState(Enum stateName, double seconds, String pointer) {
+        state(stateName);
+        transitionTimed(seconds, pointer);
+
+        return this;
+    }
 
     /**
      * Progresses to the next state after a certain amount of time. (non-blocking)

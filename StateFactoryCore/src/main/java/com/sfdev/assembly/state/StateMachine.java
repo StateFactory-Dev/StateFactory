@@ -129,13 +129,13 @@ public class StateMachine {
      * @param state Prematurely setting the statemachine to the indicated state
      */
     public void setState(Enum state) {
-        try { // try grabbing target state from either linear or failsafes
+        if (linearPlacements.get(state.name()) != null) { // try grabbing target state from either linear or failsafes
             currentState = linearList.get(linearPlacements.get(state.name()));
-        } catch (NullPointerException e) {
-            try {
+        } else {
+            if(fallbackPlacements.get(state.name()) != null) {
                 currentState = fallbackList.get(fallbackPlacements.get(state.name()));
-            } catch (NullPointerException m) {
-                throw new InvalidStateException("State \"" + currentState.getNameString() + "\": Invalid state indicated. Ensure that the given enum is connected to a state.");
+            } else {
+                throw new InvalidStateException("Set state \"" + state.name() + "\": Invalid state indicated. Ensure that the given enum is connected to a state.");
             }
         }
     }
@@ -145,13 +145,13 @@ public class StateMachine {
      * @param state Prematurely setting the statemachine to the indicated state
      */
     public void setState(String state) {
-        try { // try grabbing target state from either linear or failsafes
+        if (linearPlacements.get(state) != null) { // try grabbing target state from either linear or failsafes
             currentState = linearList.get(linearPlacements.get(state));
-        } catch (NullPointerException e) {
-            try {
+        } else {
+            if(fallbackPlacements.get(state) != null) {
                 currentState = fallbackList.get(fallbackPlacements.get(state));
-            } catch (NullPointerException m) {
-                throw new InvalidStateException("State \"" + currentState.getNameString() + "\": Invalid state indicated. Ensure that the given enum is connected to a state.");
+            } else {
+                throw new InvalidStateException("Invalid state indicated: \"" + state + "\". Ensure that the given string is connected to a state.");
             }
         }
     }
@@ -168,7 +168,6 @@ public class StateMachine {
             stop();
             isRunning = false;
         }
-
 
         if (!hasEntered) {
             if(currentState.getEnterActions() != null && !currentState.getEnterActions().isEmpty()) { // perform enter action
@@ -191,6 +190,11 @@ public class StateMachine {
             timedCallbacksDone = timedCallback.isDone();
         }
 
+        // calling loop actions
+        if(currentState.getLoopActions() != null) {
+            for(CallbackBase action : currentState.getLoopActions()) action.call();
+        }
+
         for (TransitionData transitionInfo : currentState.getTransitions()) {
             transitionInfo.runTimer();
 
@@ -198,20 +202,20 @@ public class StateMachine {
                     (currentState.getMinTransition() != null && currentState.getMinTransition().shouldTransition() && transitionInfo.shouldTransition())) {
 
                 if(transitionInfo.getPointerState() != null) { // has a pointer
-                    try { // try grabbing target state from either linear or failsafes
+                    if (linearPlacements.get(transitionInfo.getPointerState()) != null) {
                         nextState = linearList.get(linearPlacements.get(transitionInfo.getPointerState())); // linearPlacements throws null if it does not exist which throws NPE
-                    } catch (NullPointerException e) {
-                        try {
+                    } else {
+                        if(fallbackPlacements.get(transitionInfo.getPointerState()) != null) {
                             nextState = fallbackList.get(fallbackPlacements.get(transitionInfo.getPointerState()));
-                        } catch (NullPointerException m) {
-                            throw new InvalidStateException("State \"" + currentState.getNameString() + "\": Invalid state indicated. Ensure that the pointer enum is connected to a state.");
+                        } else {
+                            throw new InvalidStateException("State \"" + currentState.getNameString() + "\": Invalid state indicated: " + transitionInfo.getPointerState() + ". Ensure that the pointer enum is connected to a state.");
                         }
                     }
                 } else { // linear order
-                    try {
-                        int currIndex = linearPlacements.get(currentState.getNameString());
+                    int currIndex = linearPlacements.get(currentState.getNameString());
+                    if(linearList.size() > currIndex+1) {
                         nextState = linearList.get(currIndex + 1);
-                    } catch (IndexOutOfBoundsException e) {
+                    } else {
                         throw new StateMachineTransitionException("State \"" + currentState.getNameString() + "\": Transition Indicated, But No Next State Found. Remove final case transition statement.");
                     }
                 }
@@ -223,11 +227,6 @@ public class StateMachine {
                 willTransition = true;
                 break;
             }
-        }
-
-        // calling loop actions
-        if(!willTransition && currentState.getLoopActions() != null) {
-            for(CallbackBase action : currentState.getLoopActions()) action.call();
         }
 
         if (willTransition && currentState.getExitActions() != null) { // if transitioning, perform exit actions

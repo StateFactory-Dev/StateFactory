@@ -1,7 +1,6 @@
 package com.sfdev.assembly.state;
 
 import com.sfdev.assembly.callbacks.*;
-import com.sfdev.assembly.state.*;
 import com.sfdev.assembly.transition.*;
 
 import java.util.ArrayList;
@@ -41,6 +40,23 @@ public class State {
         timedActions = new ArrayList<>();
         transitions = new ArrayList<>();
         this.isFailsafe = isFailsafe;
+    }
+
+    protected State(Enum name, State state) {
+        this(name.name(), state);
+        this.nameEnum = name;
+    }
+
+    protected State(String name, State state) {
+        this.name = name;
+
+        enterActions = state.getEnterActions();
+        exitActions = state.getExitActions();
+        loopActions = state.getLoopActions();
+        overallMinTransition = state.getMinTransition();
+        timedActions = state.getTimedAction();
+        transitions = state.getTransitions();
+        this.isFailsafe = state.isFailsafe();
     }
 
     protected State(Enum nameEnum) {
