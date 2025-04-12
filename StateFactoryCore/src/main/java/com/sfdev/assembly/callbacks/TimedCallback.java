@@ -22,6 +22,7 @@ public class TimedCallback implements CallbackBase{
     }
 
     public void resetTimer() {
+        done = false;
         startTime = 0;
     }
     public double getTime() {
